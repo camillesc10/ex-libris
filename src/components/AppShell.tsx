@@ -1,0 +1,52 @@
+"use client";
+import { useStore } from "@/store";
+import type { Screen, Theme } from "@/types";
+import Sidebar from "./Sidebar";
+import Header from "./Header";
+import BottomNav from "./BottomNav";
+import ShelfScreen from "./screens/ShelfScreen";
+import SearchScreen from "./screens/SearchScreen";
+import ListsScreen from "./screens/ListsScreen";
+import MessagesScreen from "./screens/MessagesScreen";
+import SyncScreen from "./screens/SyncScreen";
+import BookSheet from "./BookSheet";
+import Toast from "./Toast";
+import InstallBanner from "./InstallBanner";
+
+export default function AppShell() {
+  const { theme, screen, open, toast } = useStore();
+
+  return (
+    <div data-theme={theme} style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh" }}
+        className="max-[820px]:grid-cols-1!"
+      >
+        <Sidebar />
+
+        <main
+          style={{ minWidth: 0, paddingBottom: 96 }}
+          className="max-[820px]:!pb-[calc(96px+env(safe-area-inset-bottom))]"
+        >
+          <Header />
+          <ScreenContent screen={screen} />
+        </main>
+      </div>
+
+      <BottomNav />
+      {open && <BookSheet />}
+      {toast && <Toast />}
+      <InstallBanner />
+    </div>
+  );
+}
+
+function ScreenContent({ screen }: { screen: Screen }) {
+  switch (screen) {
+    case "shelf": return <ShelfScreen />;
+    case "search": return <SearchScreen />;
+    case "lists": return <ListsScreen />;
+    case "messages": return <MessagesScreen />;
+    case "sync": return <SyncScreen />;
+  }
+}
