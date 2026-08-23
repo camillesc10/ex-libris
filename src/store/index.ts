@@ -458,19 +458,22 @@ export const useStore = create<AppState>((set, get) => ({
     let rs: SearchResult[] = [];
     try {
       const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?maxResults=12&q=${encodeURIComponent(q)}`
+        `https://www.googleapis.com/books/v1/volumes?maxResults=12&printType=books&q=${encodeURIComponent(q)}`
       );
       const j = await res.json();
       rs = (j.items || []).map((it: Record<string, unknown>) => {
         const v = (it.volumeInfo as Record<string, unknown>) || {};
-        const imageLinks = (v.imageLinks as Record<string, string>) || {};
+        const il = (v.imageLinks as Record<string, string>) || {};
+        const cover = (il.medium ?? il.thumbnail ?? il.smallThumbnail ?? "")
+          .replace("http://", "https://")
+          .replace("&edge=curl", "");
         return {
           key: it.id as string,
           title: (v.title as string) || "Sans titre",
           author: ((v.authors as string[]) || ["Auteur inconnu"]).join(", "),
           year: ((v.publishedDate as string) || "").slice(0, 4) || "—",
           snippet: ((v.description as string) || "Pas de résumé fourni par l'API.").slice(0, 180) + "…",
-          cover: imageLinks.thumbnail ? imageLinks.thumbnail.replace("http://", "https://") : "",
+          cover,
           pages: (v.pageCount as number) || 320,
           lang: ((v.language as string) || "fr").toUpperCase(),
         };
@@ -510,6 +513,7 @@ export const useStore = create<AppState>((set, get) => ({
       genre: "Romance", lang: r.lang, spice: 0, rating: 0, pages: r.pages, page: 0,
       tropes: [], lists: ["PAL"], resume: r.snippet, comment: "",
       bg, ink, platforms: [{ name: "Kobo", langs: "FR, EN" }],
+      ...(r.cover ? { coverUrl: r.cover } : {}),
     };
     set((s) => ({ books: [...s.books, nb], added: [...s.added, r.key], open: nb.id }));
     fetch("/api/books", {

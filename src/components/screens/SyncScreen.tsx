@@ -1,75 +1,44 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useStore } from "@/store";
-import { FRIENDS, CHECKPOINTS } from "@/store/data";
 
 export default function SyncScreen() {
   const {
-    books, readBook, readers, invites, myPage, pageInput, notes, notePage, noteText,
-    flow,
-    setReadBook, toggleInvite, launchRead, setPageInput, declarePage,
-    setNotePage, setNoteText, addNote, setFlow, importKindle, ping,
+    books, readBook, readers, myPage, pageInput, notes, notePage, noteText,
+    setReadBook, setPageInput, declarePage,
+    setNotePage, setNoteText, addNote, ping,
   } = useStore();
 
-  const kindleRef = useRef<HTMLInputElement>(null);
-  const [notifStatus, setNotifStatus] = useState<"default" | "granted" | "denied">(
-    typeof Notification !== "undefined" ? (Notification.permission as "default" | "granted" | "denied") : "default"
-  );
-
-  function handleKindleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const txt = ev.target?.result as string;
-      if (txt) importKindle(txt);
-    };
-    reader.readAsText(file, "utf-8");
-    e.target.value = "";
-  }
-
-  async function requestNotifications() {
-    if (typeof Notification === "undefined") return;
-    const perm = await Notification.requestPermission();
-    setNotifStatus(perm as "granted" | "denied");
-    if (perm === "granted") {
-      ping("Notifications activées !");
-    }
-  }
+  const [bookSearch, setBookSearch] = useState("");
 
   const rb = books.find((b) => b.id === readBook);
   const totalPages = rb?.pages ?? 640;
 
-  const launchEnabled = invites.length > 0;
-  const launchLabel = invites.length === 0
-    ? "Choisis au moins un·e invité·e"
-    : `Lire ensemble à ${invites.length === 1 ? "deux" : invites.length + 1}`;
-  const launchHint = rb && invites.length > 0
-    ? `« ${rb.title} » · ${invites.join(", ")} recevront l'invitation.`
-    : "";
-
-  const flowHint = flow === "fil"
-    ? "Les notes scellées restent cachées tant que tu n'as pas atteint la page."
-    : "Chaque jalon révèle un fil de discussion commun.";
+  const filteredBooks = bookSearch.trim()
+    ? books.filter((b) =>
+        b.title.toLowerCase().includes(bookSearch.toLowerCase()) ||
+        b.author.toLowerCase().includes(bookSearch.toLowerCase())
+      ).slice(0, 8)
+    : [];
 
   const allProgress = [
     { who: "Moi", page: myPage, total: totalPages, color: "var(--accent)" },
     ...readers.map((r) => ({ who: r.name, page: r.page, total: totalPages, color: r.color })),
   ];
 
-  const progressHeader = readers.length === 1
-    ? `Lecture à deux avec ${readers[0].name}`
-    : `Lecture à ${readers.length + 1} avec ${readers.map((r) => r.name).join(", ")}`;
+  const progressHeader = readers.length
+    ? `Lecture partagée · ${readers.map((r) => r.name).join(", ")}`
+    : "Mon avancée";
 
-  const unlockHint = myPage < totalPages
-    ? `Prochaine note scellée : page ${notes.find((n) => n.page > myPage)?.page ?? "—"}`
-    : "Tout est débloqué.";
+  const unlockHint = rb
+    ? `Les notes des pages ≤ ${myPage} sont visibles.`
+    : "";
 
   return (
     <div style={{ padding: "30px 38px", maxWidth: 1080 }} className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]">
       {/* Setup card */}
       <div style={{ border: "1px solid var(--line)", borderRadius: 20, background: "var(--surface)", padding: "22px 24px", marginBottom: 26 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 18 }}>
           <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 20 }}>Lire ensemble</span>
           <span style={{ fontSize: 12.5, color: "var(--muted)" }}>Un livre, une ou plusieurs personnes — les notes restent scellées page par page pour chacun·e.</span>
         </div>
@@ -77,90 +46,67 @@ export default function SyncScreen() {
         <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 9 }}>
           Le livre
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 18 }}>
-          {books.slice(0, 8).map((b) => {
-            const active = readBook === b.id;
-            return (
-              <button
-                key={b.id}
-                onClick={() => setReadBook(b.id)}
-                style={{
-                  padding: "7px 13px", borderRadius: 999, fontSize: 12.5,
-                  border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`,
-                  background: active ? "var(--soft)" : "transparent",
-                  color: active ? "var(--accent)" : "var(--ink)",
-                }}
-              >
-                {b.title}
-              </button>
-            );
-          })}
-        </div>
 
-        <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 9 }}>
-          Les invité·es
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {FRIENDS.map((f) => {
-            const invited = invites.includes(f.name);
-            return (
-              <button
-                key={f.name}
-                onClick={() => toggleInvite(f.name)}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                  padding: "7px 14px", borderRadius: 999, fontSize: 12.5,
-                  border: `1px solid ${invited ? f.color : "var(--line)"}`,
-                  background: invited ? "var(--soft)" : "transparent",
-                  color: invited ? "var(--accent)" : "var(--ink)",
-                }}
-              >
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: f.color }} />
-                {f.name}{invited ? " ✓" : ""}
-              </button>
-            );
-          })}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
-          <button
-            onClick={launchEnabled ? launchRead : undefined}
-            style={{
-              padding: "12px 20px", borderRadius: 12, fontSize: 13.5, fontWeight: 600,
-              background: launchEnabled ? "var(--accent)" : "var(--surface2)",
-              color: launchEnabled ? "#fff" : "var(--muted)",
-              cursor: launchEnabled ? "pointer" : "default",
-            }}
-          >
-            {launchLabel}
-          </button>
-          {launchHint && <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{launchHint}</span>}
-        </div>
-      </div>
-
-      {/* Flow tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
-        {([
-          { key: "fil", label: "Fil scellé page par page" },
-          { key: "jalons", label: "Jalons de chapitre" },
-        ] as const).map((f) => {
-          const active = flow === f.key;
-          return (
+        {rb ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <span style={{
+              padding: "7px 14px", borderRadius: 999, fontSize: 13,
+              border: "1px solid var(--accent)", background: "var(--soft)", color: "var(--accent)", fontWeight: 600,
+            }}>
+              {rb.title}
+            </span>
             <button
-              key={f.key}
-              onClick={() => setFlow(f.key)}
+              onClick={() => { setReadBook(""); setBookSearch(""); }}
+              style={{ fontSize: 12, color: "var(--muted)", padding: "4px 8px", borderRadius: 6, border: "1px solid var(--line)" }}
+            >
+              Changer
+            </button>
+            <button
+              onClick={() => ping(`Lecture de « ${rb.title} » démarrée 📖`)}
               style={{
-                padding: "8px 15px", borderRadius: 999, fontSize: 13,
-                border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`,
-                background: active ? "var(--soft)" : "transparent",
-                color: active ? "var(--accent)" : "var(--ink)",
+                marginLeft: "auto", padding: "9px 18px", borderRadius: 11, fontSize: 13, fontWeight: 600,
+                background: "var(--accent)", color: "#161C2F",
               }}
             >
-              {f.label}
+              Commencer
             </button>
-          );
-        })}
-        <span style={{ fontSize: 12.5, color: "var(--muted)", marginLeft: 6 }}>{flowHint}</span>
+          </div>
+        ) : (
+          <div style={{ position: "relative", marginBottom: 4 }}>
+            <input
+              type="text"
+              placeholder="Chercher un livre dans ma bibliothèque…"
+              value={bookSearch}
+              onChange={(e) => setBookSearch(e.target.value)}
+              style={{
+                width: "100%", maxWidth: 480, padding: "10px 14px",
+                border: "1px solid var(--line)", borderRadius: 11,
+                background: "var(--bg)", fontSize: 13.5, outline: "none", color: "var(--ink)",
+              }}
+            />
+            {filteredBooks.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
+                {filteredBooks.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => { setReadBook(b.id); setBookSearch(""); }}
+                    style={{
+                      padding: "7px 13px", borderRadius: 999, fontSize: 12.5,
+                      border: "1px solid var(--line)", background: "transparent", color: "var(--ink)",
+                    }}
+                  >
+                    {b.title}
+                  </button>
+                ))}
+              </div>
+            )}
+            {bookSearch.trim() && filteredBooks.length === 0 && (
+              <div style={{ marginTop: 8, fontSize: 13, color: "var(--muted)", fontStyle: "italic" }}>
+                Aucun livre trouvé — essaie un autre titre ou auteur.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Progress card */}
@@ -171,12 +117,18 @@ export default function SyncScreen() {
         >
           <div style={{
             width: 104, height: 154, flexShrink: 0, borderRadius: "4px 10px 10px 4px",
-            padding: "13px 12px", display: "flex", flexDirection: "column", justifyContent: "space-between",
+            position: "relative", overflow: "hidden",
             background: rb.bg, color: rb.ink,
             boxShadow: "0 12px 22px -12px rgba(51,41,31,.45)",
           }}>
-            <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 14, lineHeight: 1.18 }}>{rb.title}</div>
-            <div style={{ fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{rb.author}</div>
+            {rb.coverUrl ? (
+              <img src={rb.coverUrl} alt={rb.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            ) : (
+              <div style={{ padding: "13px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 14, lineHeight: 1.18 }}>{rb.title}</div>
+                <div style={{ fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{rb.author}</div>
+              </div>
+            )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 6 }}>
@@ -219,12 +171,11 @@ export default function SyncScreen() {
         </div>
       )}
 
-      {/* Flow: Fil */}
-      {flow === "fil" && (
+      {/* Fil scellé notes */}
+      {rb && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {notes.map((n) => {
             const unlocked = n.page <= myPage;
-            const avatarBg = n.who === "Moi" ? "var(--accent)" : (FRIENDS.find((f) => f.name === n.who)?.color ?? "#999");
             return (
               <div key={`${n.page}-${n.who}`} style={{ display: "flex", gap: 16 }}>
                 <div style={{ width: 76, flexShrink: 0, textAlign: "right", paddingTop: 14 }}>
@@ -245,7 +196,8 @@ export default function SyncScreen() {
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 7 }}>
                         <span style={{
-                          width: 22, height: 22, borderRadius: "50%", background: avatarBg,
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: n.who === "Moi" ? "var(--accent)" : "#8A9BC1",
                           color: "#fff", display: "grid", placeItems: "center", fontSize: 10.5, fontWeight: 600,
                         }}>
                           {n.who[0]}
@@ -288,7 +240,7 @@ export default function SyncScreen() {
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addNote()}
-                placeholder="Laisse une note à cette page — elle restera scellée jusqu'à ce qu'elle y arrive."
+                placeholder="Laisse une note à cette page — elle restera scellée jusqu'à ce que tu y arrives."
                 style={{
                   flex: 1, padding: "13px 15px", border: "1px solid var(--line)",
                   borderRadius: 14, background: "var(--surface)", fontSize: 14, outline: "none",
@@ -302,124 +254,6 @@ export default function SyncScreen() {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Kindle import (#60) */}
-      <div style={{ border: "1px solid var(--line)", borderRadius: 20, background: "var(--surface)", padding: "20px 24px", marginBottom: 26 }}>
-        <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17, marginBottom: 8 }}>
-          Importer des surlignages Kindle
-        </div>
-        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>
-          Charge ton fichier <code style={{ background: "var(--surface2)", padding: "2px 6px", borderRadius: 5 }}>My Clippings.txt</code> pour retrouver tes annotations dans les fiches de tes livres.
-        </div>
-        <input ref={kindleRef} type="file" accept=".txt" style={{ display: "none" }} onChange={handleKindleFile} />
-        <button
-          onClick={() => kindleRef.current?.click()}
-          style={{
-            padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 600,
-            background: "var(--accent)", color: "#161C2F", cursor: "pointer", border: "none",
-          }}
-        >
-          Choisir My Clippings.txt
-        </button>
-      </div>
-
-      {/* Push notifications (#18) */}
-      <div style={{ border: "1px solid var(--line)", borderRadius: 20, background: "var(--surface)", padding: "20px 24px", marginBottom: 26 }}>
-        <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17, marginBottom: 8 }}>
-          Notifications de lecture partagée
-        </div>
-        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>
-          Reçois une alerte quand une amie franchit un nouveau jalon dans votre lecture commune.
-        </div>
-        {notifStatus === "granted" ? (
-          <div style={{ fontSize: 13, color: "#4caf50", display: "flex", alignItems: "center", gap: 8 }}>
-            <span>✓</span> Notifications activées
-          </div>
-        ) : notifStatus === "denied" ? (
-          <div style={{ fontSize: 13, color: "var(--muted)" }}>
-            Notifications bloquées — autorise-les dans les réglages du navigateur.
-          </div>
-        ) : (
-          <button
-            onClick={requestNotifications}
-            style={{
-              padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 600,
-              border: "1px solid var(--accent)", background: "transparent",
-              color: "var(--accent)", cursor: "pointer",
-            }}
-          >
-            Activer les notifications
-          </button>
-        )}
-      </div>
-
-      {/* Flow: Jalons */}
-      {flow === "jalons" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 18 }}>
-          {CHECKPOINTS.map((c) => {
-            const myPassed = myPage >= c.page;
-            const allPassed = myPassed && readers.every((r) => r.page >= c.page);
-            return (
-              <div
-                key={c.label}
-                style={{
-                  border: `1px solid ${allPassed ? "var(--accent)" : "var(--line)"}`,
-                  borderRadius: 18,
-                  background: allPassed ? "var(--soft)" : "var(--surface)",
-                  padding: 20, display: "flex", flexDirection: "column", gap: 12,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: allPassed ? "var(--accent)" : "var(--muted)" }}>
-                    {c.kicker}
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--muted)" }}>jusqu&apos;à p. {c.page}</span>
-                </div>
-                <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 19, lineHeight: 1.2 }}>
-                  {c.label}
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <span style={{
-                    padding: "5px 10px", borderRadius: 999, fontSize: 11.5,
-                    background: myPassed ? "var(--soft)" : "var(--surface2)",
-                    color: myPassed ? "var(--accent)" : "var(--muted)",
-                  }}>
-                    {myPassed ? "Toi ✓" : "Toi · en route"}
-                  </span>
-                  {readers.map((r) => (
-                    <span
-                      key={r.name}
-                      style={{
-                        padding: "5px 10px", borderRadius: 999, fontSize: 11.5,
-                        background: r.page >= c.page ? "var(--soft)" : "var(--surface2)",
-                        color: r.page >= c.page ? r.color : "var(--muted)",
-                      }}
-                    >
-                      {r.page >= c.page ? `${r.name} ✓` : `${r.name} · en route`}
-                    </span>
-                  ))}
-                </div>
-                <div style={{ borderTop: "1px solid var(--line)", paddingTop: 12, fontSize: 13.5, lineHeight: 1.55, color: "var(--muted)" }}>
-                  {allPassed
-                    ? "Tout le monde est arrivé ici — le fil est ouvert."
-                    : `${myPassed ? "Tu as dépassé ce jalon" : "Atteins la page pour déverrouiller"}.`}
-                </div>
-                <button
-                  style={{
-                    alignSelf: "flex-start", padding: "8px 13px", borderRadius: 10,
-                    background: myPassed ? "var(--surface2)" : "var(--accent)",
-                    color: myPassed ? "var(--muted)" : "#fff",
-                    fontSize: 12.5, fontWeight: 600,
-                    cursor: myPassed ? "default" : "pointer",
-                  }}
-                >
-                  {myPassed ? "Ouvrir le fil" : "Je suis arrivée ici"}
-                </button>
-              </div>
-            );
-          })}
         </div>
       )}
     </div>
