@@ -8,9 +8,16 @@ import IsbnScanner from "../IsbnScanner";
 export default function SearchScreen() {
   const { results, searching, source, added, addFromApi, runSearch, setQuery, query } = useStore();
   const [scanOpen, setScanOpen] = useState(false);
+  const [isbnDraft, setIsbnDraft] = useState("");
 
   async function handleIsbnFound(isbn: string) {
     setScanOpen(false);
+    setQuery(isbn);
+    await runSearch();
+  }
+
+  async function handleIsbnText(isbn: string) {
+    setIsbnDraft("");
     setQuery(isbn);
     await runSearch();
   }
@@ -23,12 +30,12 @@ export default function SearchScreen() {
 
   return (
     <div style={{ padding: "30px 38px", maxWidth: 1100 }} className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]">
-      {/* ISBN scan button */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+      {/* ISBN scan button + ISBN text field (#99) */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         <button
           onClick={() => setScanOpen(true)}
           style={{
-            display: "flex", alignItems: "center", gap: 8,
+            display: "flex", alignItems: "center", gap: 8, minHeight: 44,
             padding: "9px 16px", borderRadius: 11, fontSize: 13, fontWeight: 600,
             background: "var(--soft)", color: "var(--accent)",
             border: "1px solid var(--line)",
@@ -36,11 +43,45 @@ export default function SearchScreen() {
         >
           <span style={{ fontSize: 16 }}>📷</span> Scanner un ISBN
         </button>
+        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={13}
+            placeholder="ISBN (ex. 9782070360024)"
+            value={isbnDraft}
+            onChange={(e) => setIsbnDraft(e.target.value.replace(/\D/g, ""))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && isbnDraft.length >= 10) {
+                handleIsbnText(isbnDraft);
+              }
+            }}
+            style={{
+              padding: "9px 14px 9px 14px", minHeight: 44,
+              border: "1px solid var(--line)", borderRadius: 11,
+              background: "var(--surface)", fontSize: 13, outline: "none", width: 220,
+              color: "var(--ink)",
+            }}
+          />
+          {isbnDraft.length >= 10 && (
+            <button
+              onClick={() => handleIsbnText(isbnDraft)}
+              style={{
+                position: "absolute", right: 8,
+                padding: "4px 10px", borderRadius: 7, fontSize: 12,
+                background: "var(--accent)", color: "#161C2F", fontWeight: 600,
+              }}
+            >
+              ↵
+            </button>
+          )}
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--muted)" }}>
           <span style={{ padding: "5px 11px", borderRadius: 999, background: "var(--surface2)" }}>
             {source || "Google Books"}
           </span>
-          <span>{statusText}</span>
+          <span className="max-[820px]:hidden">{statusText}</span>
         </div>
       </div>
 

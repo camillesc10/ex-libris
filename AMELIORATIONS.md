@@ -79,18 +79,18 @@ Format : `[ ]` proposée · `[x]` acceptée · `[-]` refusée · `[~]` en cours
 | 69 | [ ] | **Mode hors-ligne** | Service Worker + cache API — consulter et noter sans connexion, sync au retour |
 | 70 | [ ] | **Thème "Encre sépia"** | Troisième thème — tons orangé-brun chauds pour les soirées d'automne |
 | 71 | [ ] | **Mode "lecture rapide"** | Affiche une page à la fois en plein écran avec minuterie, pour s'entraîner à lire plus vite |
-| 72 | [ ] | **Comparaison de bibliothèques** | Voir les livres en commun avec une amie et ceux qu'elle a lus mais pas toi |
+| 72 | [x] | **Comparaison de bibliothèques** | Voir les livres en commun avec une amie et ceux qu'elle a lus mais pas toi |
 | 73 | [ ] | **Fiche auteur enrichie** | Récupérer photo, biographie et nationalité depuis OpenLibrary ou Wikidata |
-| 74 | [ ] | **Mode "coup de foudre"** | Swipe gauche/droite sur les livres de la PAL pour décider lequel lire en premier |
-| 75 | [ ] | **Lecture parallèle** | Suivre plusieurs livres simultanément avec un onglet par livre dans la vue En cours |
-| 76 | [ ] | **Club de lecture** | Espace dédié pour un groupe avec vote sur le prochain livre à lire ensemble |
+| 74 | [x] | **Mode "coup de foudre"** | Swipe gauche/droite sur les livres de la PAL pour décider lequel lire en premier |
+| 75 | [x] | **Lecture parallèle** | Suivre plusieurs livres simultanément avec un onglet par livre dans la vue En cours |
+| 76 | [x] | **Club de lecture** | Espace dédié pour un groupe avec vote sur le prochain livre à lire ensemble |
 | 77 | [ ] | **Graphe de réseau** | Visualisation des liens entre livres (série, auteur, tropes communs) en graphe interactif |
 | 78 | [ ] | **Compteur de mots** | Champ "nombre de mots" en plus des pages, avec vitesse de lecture en mots/minute |
 | 79 | [ ] | **Mode sombre total** | Variante OLED pure-black (#000) pour économiser la batterie sur mobile |
 | 80 | [ ] | **Export PDF de fiche** | Générer un PDF imprimable d'une fiche de livre — couverture + infos + commentaire |
 | 81 | [ ] | **Reconnaissance vocale** | Dicter le commentaire ou les notes d'une fiche à la voix |
 | 82 | [ ] | **Prêt de livre** | Marquer un livre comme prêté à quelqu'un avec rappel de retour |
-| 83 | [ ] | **Liste de souhaits** | Rayon "Wishlist" avec bouton d'achat direct vers la librairie |
+| 83 | [x] | **Liste de souhaits** | Rayon "Wishlist" avec bouton d'achat direct vers la librairie |
 | 84 | [ ] | **Humeur de lecture** | Tag d'humeur par session (fébrile, contemplatif, frustré…) visible sur la timeline |
 | 85 | [ ] | **Couverture personnalisée** | Uploader une photo de sa propre couverture pour remplacer la couleur générée |
 | 86 | [ ] | **Partage sur Mastodon/Bluesky** | Bouton "Partager ma lecture" avec texte pré-rempli et lien vers la fiche publique |
@@ -104,23 +104,23 @@ Format : `[ ]` proposée · `[x]` acceptée · `[-]` refusée · `[~]` en cours
 | 94 | [ ] | **Playlist de lecture** | Associer une playlist Spotify ou Apple Music à un livre — s'affiche sur la fiche |
 | 95 | [ ] | **Rappel quotidien** | Notification push à heure configurable : "Tu n'as pas encore lu aujourd'hui !" |
 | 96 | [ ] | **Importation depuis Bookly** | Lire les données de l'app Bookly (iOS) et les mapper vers les champs Ex-Libris |
-| 97 | [ ] | **Tampon "relu"** | Badge visuel sur la couverture quand le livre est dans "À relire" et a déjà été noté |
+| 97 | [x] | **Tampon "relu"** | Badge visuel sur la couverture quand le livre est dans "À relire" et a déjà été noté |
 | 98 | [ ] | **Historique des sessions de lecture** | Calculer temps moyen par session à partir des entrées journal + rappel minuterie |
-| 99 | [ ] | **Recherche par ISBN** | Champ de recherche directe par code ISBN dans SearchScreen |
+| 99 | [x] | **Recherche par ISBN** | Champ de recherche directe par code ISBN dans SearchScreen |
 | 100 | [ ] | **Vue "Nouveautés"** | Rayon automatique des livres ajoutés au cours des 30 derniers jours |
-| 101 | [ ] | **Filtre "non noté"** | Chip rapide pour isoler les livres "Déjà lu" sans note — pour se mettre à jour |
+| 101 | [x] | **Filtre "non noté"** | Chip rapide pour isoler les livres "Déjà lu" sans note — pour se mettre à jour |
 | 102 | [ ] | **Fiche en deux colonnes** | Option d'affichage dense : résumé + infos côte à côte au lieu de l'empilement vertical |
 | 103 | [ ] | **Mode lecture nuit** | Filtre chaud (température couleur 3000 K) activable depuis la barre du bas |
-| 104 | [ ] | **Récompense de lecture** | Confettis + message personnalisé quand le dernier tome d'une saga est terminé |
+| 104 | [x] | **Récompense de lecture** | Confettis + message personnalisé quand le dernier tome d'une saga est terminé |
 | 105 | [ ] | **Agenda de lecture** | Calendrier avec les livres planifiés — "je lis ça en mars, puis ça en avril" |
-| 106 | [ ] | **Comparaison de notes** | Voir en regard les avis de tes amies sur un même livre si elles l'ont noté |
-| 107 | [ ] | **Fond de couverture dynamique** | Extracteur de palette automatique depuis une image uploadée pour les couvertures personnalisées |
+| 106 | [x] | **Comparaison de notes** | Voir en regard les avis de tes amies sur un même livre si elles l'ont noté |
+| 107 | [x] | **Fond de couverture dynamique** | Extracteur de palette automatique depuis une image uploadée pour les couvertures personnalisées |
 | 108 | [ ] | **Export CSV de listes** | Télécharger une seule liste en CSV — utile pour partager une sélection |
-| 109 | [ ] | **Suggestions "même auteur"** | Dans la fiche, bloc "Autres livres de cet auteur dans ta PAL" |
-| 110 | [ ] | **Notification fin de série** | Alerte quand toutes les entrées d'une saga sont dans "Déjà lu" |
+| 109 | [x] | **Suggestions "même auteur"** | Dans la fiche, bloc "Autres livres de cet auteur dans ta PAL" |
+| 110 | [x] | **Notification fin de série** | Alerte quand toutes les entrées d'une saga sont dans "Déjà lu" |
 | 111 | [ ] | **Personnalisation du fond d'écran** | Choisir une image ou texture de fond pour l'app (bois, velours, pierre…) |
 | 112 | [ ] | **Chiffrement des notes** | Option pour chiffrer localement les commentaires sensibles (AES-GCM, clé dérivée du mot de passe) |
-| 113 | [ ] | **Lien ISBN → achat** | Sur chaque fiche, lien direct vers le livre sur Bookshop.org ou la FNAC |
+| 113 | [x] | **Lien ISBN → achat** | Sur chaque fiche, lien direct vers le livre sur Bookshop.org ou la FNAC |
 | 114 | [ ] | **Prédiction de durée** | "À ta vitesse actuelle tu finiras ce livre dans X jours" basé sur pages/jour du journal |
 | 115 | [ ] | **Mot du jour** | Afficher un mot rare ou littéraire chaque matin sur l'écran de démarrage |
 | 116 | [ ] | **Partage de page note** | Bouton sur une note de page pour la partager en image avec fond aux couleurs du livre |

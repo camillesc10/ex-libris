@@ -13,6 +13,8 @@ import SyncScreen from "./screens/SyncScreen";
 import AuthorsScreen from "./screens/AuthorsScreen";
 import JournalScreen from "./screens/JournalScreen";
 import TimelineScreen from "./screens/TimelineScreen";
+import ClubScreen from "./screens/ClubScreen";
+import LibraryCompareScreen from "./screens/LibraryCompareScreen";
 import BookSheet from "./BookSheet";
 import Toast from "./Toast";
 import InstallBanner from "./InstallBanner";
@@ -58,5 +60,7 @@ function ScreenContent({ screen }: { screen: Screen }) {
     case "authors": return <AuthorsScreen />;
     case "journal": return <JournalScreen />;
     case "timeline": return <TimelineScreen />;
+    case "club": return <ClubScreen />;
+    case "compare": return <LibraryCompareScreen />;
   }
 }

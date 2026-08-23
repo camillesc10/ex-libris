@@ -105,6 +105,7 @@ export const SEED_LISTS: BookList[] = [
   { name: "En pause", dot: "#C49A5E", desc: "Interrompus, mais pas abandonnés." },
   { name: "À relire", dot: "#96A1BE", desc: "Trop bons pour n'être lus qu'une fois." },
   { name: "Abandonné", dot: "#6B7280", desc: "La vie est trop courte pour les mauvais livres." },
+  { name: "Liste de souhaits", dot: "#C4735C", desc: "Ceux que je veux lire mais que je n'ai pas encore." },
   { name: "Pépites 2024", dot: "#E0B84A", desc: "Celles que je force les gens à lire." },
 ];
 

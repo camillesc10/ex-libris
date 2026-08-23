@@ -1,7 +1,7 @@
 "use client";
 import { useStore } from "@/store";
 
-const DEFAULT_SHELVES = new Set(["En cours", "PAL", "Déjà lu", "En pause", "À relire", "Abandonné"]);
+const DEFAULT_SHELVES = new Set(["En cours", "PAL", "Déjà lu", "En pause", "À relire", "Abandonné", "Liste de souhaits"]);
 
 export default function ListsScreen() {
   const { books, lists, newList, setNewList, addList, deleteList, openBook, generateShareCode } = useStore();

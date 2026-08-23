@@ -12,6 +12,7 @@ interface Props {
 export default function BookCover({ book, width = 132, height = 196, className = "", onClick }: Props) {
   const spiceStr = "🌶".repeat(book.spice) || "";
   const inCours = book.lists.includes("En cours");
+  const isReread = book.lists.includes("À relire") && book.rating > 0;
   const progress = book.pages > 0 ? Math.round((book.page / book.pages) * 100) : 0;
 
   const stateLabel = inCours
@@ -52,6 +53,19 @@ export default function BookCover({ book, width = 132, height = 196, className =
           position: "relative", overflow: "hidden",
         }}
       >
+        {/* Relu badge (#97) */}
+        {isReread && (
+          <div style={{
+            position: "absolute", top: 8, right: 8,
+            fontSize: 10, fontWeight: 700, letterSpacing: ".08em",
+            background: "rgba(224,184,74,.85)", color: "#161C2F",
+            borderRadius: 6, padding: "2px 6px",
+            textTransform: "uppercase",
+          }}>
+            relu
+          </div>
+        )}
+
         {/* Reading progress bar */}
         {inCours && book.pages > 0 && (
           <div style={{

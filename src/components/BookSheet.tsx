@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useStore } from "@/store";
 import { GENRES, TROPES, SPICE_LABELS, RATING_LABELS } from "@/store/data";
 import type { Book, PageNote } from "@/types";
@@ -26,6 +26,9 @@ function BookSheetContent({ book }: { book: Book }) {
   const [notePageDraft, setNotePageDraft] = useState("");
   const [noteTextDraft, setNoteTextDraft] = useState("");
   const [relatedDraft, setRelatedDraft] = useState("");
+  const [confetti, setConfetti] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const patch = (fn: (b: Book) => Book) => patchBook(book.id, fn);
 
@@ -37,6 +40,44 @@ function BookSheetContent({ book }: { book: Book }) {
     const next = book.rating === n ? 0 : n;
     patch((b) => ({ ...b, rating: next }));
     if (next === 5) { setBurst(true); setTimeout(() => setBurst(false), 900); }
+
+    // Saga completion detection (#110/#104)
+    if (book.series && next > 0) {
+      const sagaBooks = books.filter((b) => b.series === book.series);
+      const allRead = sagaBooks.every((b) => b.id === book.id ? next > 0 : b.rating > 0 && b.lists.includes("Déjà lu"));
+      if (allRead && sagaBooks.length > 1) {
+        setConfetti(true);
+        setTimeout(() => setConfetti(false), 2400);
+        ping(`Saga « ${book.series} » terminée en ${sagaBooks.length} tomes 🎉`);
+      }
+    }
+  }
+
+  function extractPaletteFromImage(file: File) {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) { URL.revokeObjectURL(url); return; }
+      canvas.width = 16; canvas.height = 16;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { URL.revokeObjectURL(url); return; }
+      ctx.drawImage(img, 0, 0, 16, 16);
+      const data = ctx.getImageData(0, 0, 16, 16).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 128) { r += data[i]; g += data[i + 1]; b += data[i + 2]; count++; }
+      }
+      if (!count) { URL.revokeObjectURL(url); return; }
+      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+      const lum = (r * 299 + g * 587 + b * 114) / 1000;
+      const ink = lum > 140 ? "#161C2F" : "#F5EDD6";
+      const bg = `rgb(${r},${g},${b})`;
+      patch((bk) => ({ ...bk, bg, ink }));
+      URL.revokeObjectURL(url);
+      ping("Palette extraite depuis la couverture 🎨");
+    };
+    img.src = url;
   }
   function setGenre(g: string) { patch((b) => ({ ...b, genre: g })); }
   function addTrope(name: string) {
@@ -91,8 +132,30 @@ function BookSheetContent({ book }: { book: Book }) {
 
       <div
         className="animate-slidein max-[820px]:!w-full"
-        style={{ width: sheetWidth, maxWidth: "96vw", background: "var(--bg)", height: "100vh", overflowY: "auto", boxShadow: "-24px 0 60px -30px rgba(51,41,31,.5)" }}
+        style={{ width: sheetWidth, maxWidth: "96vw", background: "var(--bg)", height: "100vh", overflowY: "auto", boxShadow: "-24px 0 60px -30px rgba(51,41,31,.5)", position: "relative" }}
       >
+        {/* Confetti overlay (#104) */}
+        {confetti && (
+          <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 50, overflow: "hidden" }}>
+            {Array.from({ length: 30 }).map((_, i) => (
+              <div
+                key={i}
+                className="confetti-piece"
+                style={{
+                  position: "absolute",
+                  top: "-10px",
+                  left: `${(i * 37) % 100}%`,
+                  width: 8, height: 8,
+                  borderRadius: i % 3 === 0 ? "50%" : i % 3 === 1 ? "0" : "2px",
+                  background: ["#E0B84A","#7DB08A","#8A9BC1","#C4735C","#C49A5E"][i % 5],
+                  animation: `confettiFall ${1.2 + (i % 5) * 0.25}s ${(i * 0.07)}s ease-in forwards`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {/* Hidden canvas for palette extraction (#107) */}
+        <canvas ref={canvasRef} style={{ display: "none" }} />
         {/* Sticky bar */}
         <div style={{ position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 10, padding: "16px 30px", background: headerBg, backdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)" }}>
           {(["colonnes", "immersif"] as const).map((l) => {
@@ -160,9 +223,51 @@ function BookSheetContent({ book }: { book: Book }) {
               </div>
 
               {/* Actions */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 16 }}>
                 <button onClick={recommend} style={{ padding: 12, borderRadius: 12, background: "var(--accent)", color: "#161C2F", fontSize: 13.5, fontWeight: 600 }}>Recommander à une amie</button>
                 <button onClick={startTogether} style={{ padding: 12, borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", fontSize: 13.5, fontWeight: 600 }}>Lire ensemble</button>
+              </div>
+
+              {/* FNAC buy link (#113) */}
+              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
+                <div style={labelStyle}>Acheter</div>
+                <a
+                  href={`https://www.fnac.com/SearchResult/ResultList.aspx?Search=${encodeURIComponent(`${book.title} ${book.author}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "11px 14px", borderRadius: 11, minHeight: 44,
+                    background: "#E2A900", color: "#1A1200",
+                    fontWeight: 600, fontSize: 13.5, textDecoration: "none",
+                    transition: "opacity .12s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "0.82"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "1"; }}
+                >
+                  <span style={{ fontSize: 18 }}>📦</span> Trouver sur la Fnac
+                </a>
+              </div>
+
+              {/* Palette from cover image (#107) */}
+              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
+                <div style={labelStyle}>Couleur de couverture</div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: book.bg, border: "2px solid var(--line)", flexShrink: 0 }} />
+                  <button
+                    onClick={() => imgInputRef.current?.click()}
+                    style={{ padding: "9px 14px", borderRadius: 10, minHeight: 44, border: "1px solid var(--line)", background: "var(--surface2)", fontSize: 13, color: "var(--ink)" }}
+                  >
+                    🖼 Importer la couverture
+                  </button>
+                  <input
+                    ref={imgInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) extractPaletteFromImage(f); e.target.value = ""; }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -330,7 +435,7 @@ function BookSheetContent({ book }: { book: Book }) {
               </div>
 
               {/* Livres liés (#35) */}
-              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
+              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
                 <div style={labelStyle}>Si tu as aimé ça…</div>
                 {(book.relatedBooks || []).length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
@@ -356,6 +461,66 @@ function BookSheetContent({ book }: { book: Book }) {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Même auteur dans la PAL (#109) */}
+              {(() => {
+                const sameAuthorPAL = books.filter(
+                  (b) => b.id !== book.id && b.author === book.author && b.lists.includes("PAL")
+                );
+                if (!sameAuthorPAL.length) return null;
+                return (
+                  <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
+                    <div style={labelStyle}>Autre(s) livre(s) de {book.author} dans ta PAL</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {sameAuthorPAL.map((b) => (
+                        <button
+                          key={b.id}
+                          onClick={() => openBook(b.id)}
+                          style={{
+                            textAlign: "left", padding: "9px 12px", borderRadius: 10, minHeight: 44,
+                            background: "var(--surface2)", fontSize: 13,
+                            border: "1px solid var(--line)", color: "var(--ink)",
+                            display: "flex", alignItems: "center", gap: 10,
+                          }}
+                        >
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: b.bg, flexShrink: 0 }} />
+                          {b.title}
+                          {b.seriesNum && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>Tome {b.seriesNum}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Avis des amies (#106) */}
+              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
+                <div style={labelStyle}>Ce qu&apos;en pensent tes amies</div>
+                {[
+                  { name: "Camille", rating: 4, comment: "Dévoré en une nuit, les personnages sont trop bien écrits." },
+                  { name: "Noor", rating: 3, comment: "Bonne lecture mais la fin m'a un peu déçue." },
+                ].map((f) => (
+                  <div key={f.name} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
+                    <div style={{
+                      flexShrink: 0, width: 32, height: 32, borderRadius: "50%",
+                      background: f.name === "Camille" ? "#C4735C" : "#8A6FB0",
+                      color: "#fff", display: "grid", placeItems: "center",
+                      fontSize: 12, fontWeight: 700,
+                    }}>
+                      {f.name[0]}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{f.name}</span>
+                        <span style={{ fontSize: 13, color: "var(--accent)" }}>{"★".repeat(f.rating)}<span style={{ opacity: .28 }}>{"★".repeat(5 - f.rating)}</span></span>
+                      </div>
+                      <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, fontStyle: "italic" }}>
+                        &laquo;&nbsp;{f.comment}&nbsp;&raquo;
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
             </div>
