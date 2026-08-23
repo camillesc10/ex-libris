@@ -30,7 +30,6 @@ export default function Sidebar() {
     { key: "journal" as const, label: "Journal", count: "" },
     { key: "timeline" as const, label: "Chronologie", count: "" },
     { key: "sync" as const, label: "Lecture partagée", count: "" },
-    { key: "club" as const, label: "Club de lecture", count: "" },
   ];
 
   return (

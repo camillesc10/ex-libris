@@ -44,16 +44,25 @@ export default function BookCover({ book, width = 132, height = 196, className =
       <div
         style={{
           height, borderRadius: "4px 12px 12px 4px",
-          padding: "16px 14px", display: "flex", flexDirection: "column",
-          justifyContent: "space-between",
           boxShadow: "0 18px 30px -16px #000",
-          background: book.bg, color: book.ink,
+          background: book.bg,
           borderLeft: "4px solid rgba(224,184,74,.7)",
           outline: "1px solid rgba(224,184,74,.32)", outlineOffset: -6,
           position: "relative", overflow: "hidden",
+          ...(book.coverUrl ? {
+            backgroundImage: `url(${book.coverUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          } : {
+            color: book.ink,
+            padding: "16px 14px",
+            display: "flex",
+            flexDirection: "column" as const,
+            justifyContent: "space-between",
+          }),
         }}
       >
-        {/* Relu badge (#97) */}
+        {/* Relu badge */}
         {isReread && (
           <div style={{
             position: "absolute", top: 8, right: 8,
@@ -79,15 +88,19 @@ export default function BookCover({ book, width = 132, height = 196, className =
           </div>
         )}
 
-        <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 15, lineHeight: 1.2, letterSpacing: ".02em" }}>
-          {book.title}
-        </div>
-        <div>
-          <div style={{ fontSize: 9, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72, marginBottom: 7 }}>
-            {book.author}
-          </div>
-          <div style={{ fontSize: 11 }}>{spiceStr}</div>
-        </div>
+        {!book.coverUrl && (
+          <>
+            <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 15, lineHeight: 1.2, letterSpacing: ".02em" }}>
+              {book.title}
+            </div>
+            <div>
+              <div style={{ fontSize: 9, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72, marginBottom: 7 }}>
+                {book.author}
+              </div>
+              <div style={{ fontSize: 11 }}>{spiceStr}</div>
+            </div>
+          </>
+        )}
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9, fontSize: 11.5, color: "var(--muted)" }}>
         <span>{pageLabel}</span>
