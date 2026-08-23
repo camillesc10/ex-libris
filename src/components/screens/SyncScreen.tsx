@@ -48,7 +48,7 @@ export default function SyncScreen() {
         </div>
 
         {rb ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
             <span style={{
               padding: "7px 14px", borderRadius: 999, fontSize: 13,
               border: "1px solid var(--accent)", background: "var(--soft)", color: "var(--accent)", fontWeight: 600,
@@ -56,11 +56,19 @@ export default function SyncScreen() {
               {rb.title}
             </span>
             <button
-              onClick={() => { setReadBook(""); setBookSearch(""); }}
+              onClick={() => { setReadBook(""); setBookSearch(""); ping("Livre changé."); }}
               style={{ fontSize: 12, color: "var(--muted)", padding: "4px 8px", borderRadius: 6, border: "1px solid var(--line)" }}
             >
               Changer
             </button>
+            {!readers.length && (
+              <button
+                onClick={() => { setReadBook(""); ping("Lecture partagée annulée."); }}
+                style={{ fontSize: 12, color: "var(--muted)", padding: "4px 8px", borderRadius: 6, border: "1px solid var(--line)" }}
+              >
+                Annuler
+              </button>
+            )}
             <button
               onClick={() => ping(`Lecture de « ${rb.title} » démarrée 📖`)}
               style={{
