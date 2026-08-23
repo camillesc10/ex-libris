@@ -30,6 +30,33 @@ export default function SearchScreen() {
 
   return (
     <div style={{ padding: "30px 38px", maxWidth: 1100 }} className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]">
+      {/* Title / author search bar */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        <input
+          type="text"
+          placeholder="Titre, auteur…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && query.trim()) runSearch(); }}
+          style={{
+            flex: 1, minWidth: 220, maxWidth: 500, padding: "11px 16px", minHeight: 46,
+            border: "1px solid var(--line)", borderRadius: 12,
+            background: "var(--surface)", fontSize: 14, outline: "none", color: "var(--ink)",
+          }}
+        />
+        <button
+          onClick={() => { if (query.trim()) runSearch(); }}
+          disabled={searching}
+          style={{
+            padding: "11px 22px", borderRadius: 12, minHeight: 46,
+            background: "var(--accent)", color: "#161C2F", fontSize: 14, fontWeight: 700,
+            opacity: searching ? 0.7 : 1,
+          }}
+        >
+          {searching ? "…" : "Rechercher"}
+        </button>
+      </div>
+
       {/* ISBN scan button + ISBN text field (#99) */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         <button
