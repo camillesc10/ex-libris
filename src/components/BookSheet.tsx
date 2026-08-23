@@ -27,6 +27,7 @@ function BookSheetContent({ book }: { book: Book }) {
   const [noteTextDraft, setNoteTextDraft] = useState("");
   const [relatedDraft, setRelatedDraft] = useState("");
   const [confetti, setConfetti] = useState(false);
+  const [fetchingInfo, setFetchingInfo] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -112,6 +113,33 @@ function BookSheetContent({ book }: { book: Book }) {
     patch((b) => ({ ...b, relatedBooks: (b.relatedBooks || []).filter((id) => id !== bookId) }));
   }
 
+  async function fetchBookInfo() {
+    setFetchingInfo(true);
+    try {
+      const q = encodeURIComponent(`${book.title} ${book.author}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=1&q=${q}`);
+      const j = await res.json();
+      const it = j.items?.[0];
+      if (!it) { ping("Aucun résultat trouvé sur Google Books."); return; }
+      const v = it.volumeInfo || {};
+      const imageLinks = v.imageLinks || {};
+      const coverUrl: string = (imageLinks.extraLarge || imageLinks.large || imageLinks.medium || imageLinks.thumbnail || "").replace("http://", "https://");
+      patch((b) => ({
+        ...b,
+        ...(coverUrl ? { coverUrl } : {}),
+        ...(v.pageCount && !b.pages ? { pages: v.pageCount } : {}),
+        ...(v.description && !b.resume ? { resume: (v.description as string).slice(0, 400) + "…" } : {}),
+        ...(v.publishedDate && !b.year ? { year: (v.publishedDate as string).slice(0, 4) } : {}),
+        ...(v.language && !b.lang ? { lang: (v.language as string).toUpperCase() } : {}),
+      }));
+      ping(coverUrl ? "Couverture et infos récupérées ✓" : "Infos récupérées (pas de couverture disponible).");
+    } catch {
+      ping("Erreur lors de la récupération des infos.");
+    } finally {
+      setFetchingInfo(false);
+    }
+  }
+
   const tropeSuggestions = TROPES.filter(
     (t) => !book.tropes.includes(t) && (tropeDraft === "" || t.toLowerCase().includes(tropeDraft.toLowerCase()))
   ).slice(0, 6);
@@ -188,9 +216,15 @@ function BookSheetContent({ book }: { book: Book }) {
             {/* Left column */}
             <div>
               {isColonnes && (
-                <div style={{ height: 300, borderRadius: "5px 14px 14px 5px", padding: "22px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
-                  <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 22, lineHeight: 1.2, letterSpacing: ".02em" }}>{book.title}</div>
-                  <div style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{book.author}</div>
+                <div style={{ height: 300, borderRadius: "5px 14px 14px 5px", overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
+                  {book.coverUrl ? (
+                    <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  ) : (
+                    <div style={{ padding: "22px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+                      <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 22, lineHeight: 1.2, letterSpacing: ".02em" }}>{book.title}</div>
+                      <div style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{book.author}</div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -251,9 +285,18 @@ function BookSheetContent({ book }: { book: Book }) {
 
               {/* Palette from cover image (#107) */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
-                <div style={labelStyle}>Couleur de couverture</div>
+                <div style={labelStyle}>Couverture &amp; couleur</div>
                 <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: book.bg, border: "2px solid var(--line)", flexShrink: 0 }} />
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: book.bg, border: "2px solid var(--line)", flexShrink: 0, overflow: "hidden" }}>
+                    {book.coverUrl && <img src={book.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                  </div>
+                  <button
+                    onClick={fetchBookInfo}
+                    disabled={fetchingInfo}
+                    style={{ padding: "9px 14px", borderRadius: 10, minHeight: 44, border: "1px solid var(--accent)", background: "var(--soft)", fontSize: 13, color: "var(--accent)", fontWeight: 600, opacity: fetchingInfo ? 0.6 : 1 }}
+                  >
+                    {fetchingInfo ? "Recherche…" : "🌐 Chercher sur internet"}
+                  </button>
                   <button
                     onClick={() => imgInputRef.current?.click()}
                     style={{ padding: "9px 14px", borderRadius: 10, minHeight: 44, border: "1px solid var(--line)", background: "var(--surface2)", fontSize: 13, color: "var(--ink)" }}
@@ -494,34 +537,6 @@ function BookSheetContent({ book }: { book: Book }) {
                 );
               })()}
 
-              {/* Avis des amies (#106) */}
-              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
-                <div style={labelStyle}>Ce qu&apos;en pensent tes amies</div>
-                {[
-                  { name: "Camille", rating: 4, comment: "Dévoré en une nuit, les personnages sont trop bien écrits." },
-                  { name: "Noor", rating: 3, comment: "Bonne lecture mais la fin m'a un peu déçue." },
-                ].map((f) => (
-                  <div key={f.name} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
-                    <div style={{
-                      flexShrink: 0, width: 32, height: 32, borderRadius: "50%",
-                      background: f.name === "Camille" ? "#C4735C" : "#8A6FB0",
-                      color: "#fff", display: "grid", placeItems: "center",
-                      fontSize: 12, fontWeight: 700,
-                    }}>
-                      {f.name[0]}
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>{f.name}</span>
-                        <span style={{ fontSize: 13, color: "var(--accent)" }}>{"★".repeat(f.rating)}<span style={{ opacity: .28 }}>{"★".repeat(5 - f.rating)}</span></span>
-                      </div>
-                      <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, fontStyle: "italic" }}>
-                        &laquo;&nbsp;{f.comment}&nbsp;&raquo;
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
 
             </div>
           </div>

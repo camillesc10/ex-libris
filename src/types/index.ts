@@ -51,6 +51,7 @@ export interface Book {
   dnfReason?: string;
   relatedBooks?: string[];
   reminderDate?: string;
+  coverUrl?: string;
 }
 
 export interface BookList {
