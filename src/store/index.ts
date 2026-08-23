@@ -21,7 +21,7 @@ import {
   SEED_BOOKS, SEED_LISTS, SEED_CONVOS, SEED_NOTES, SEED_READERS,
   COVER_PALETTE,
 } from "./data";
-import type { JournalEntry } from "@/types";
+import type { JournalEntry, Proposal } from "@/types";
 
 interface AppState {
   // Auth
@@ -62,6 +62,9 @@ interface AppState {
 
   // Journal
   journalEntries: JournalEntry[];
+
+  // Club
+  proposals: Proposal[];
 
   // Search
   query: string;
@@ -136,6 +139,9 @@ interface AppState {
 
   addJournalEntry: (e: Omit<JournalEntry, "id" | "date">) => void;
 
+  voteProposal: (bookId: string) => void;
+  proposeBook: (book: import("@/types").Book) => void;
+
   openConvo: (id: string) => void;
   setDraft: (v: string) => void;
   sendDraft: () => void;
@@ -185,6 +191,8 @@ export const useStore = create<AppState>((set, get) => ({
   yearGoal: 0,
 
   journalEntries: [],
+
+  proposals: [],
 
   query: "",
   results: [],
@@ -260,9 +268,29 @@ export const useStore = create<AppState>((set, get) => ({
   async hydrate() {
     if (get().hydrated) return;
     try {
-      const [br, lr] = await Promise.all([fetch("/api/books"), fetch("/api/lists")]);
-      const [booksData, listsData] = await Promise.all([br.json(), lr.json()]);
-      set({ books: booksData, lists: listsData, hydrated: true });
+      const [br, lr, cr, nr, jr, clr, pr] = await Promise.all([
+        fetch("/api/books"), fetch("/api/lists"), fetch("/api/conversations"),
+        fetch("/api/notes"), fetch("/api/journal"), fetch("/api/club"), fetch("/api/prefs"),
+      ]);
+      const [booksData, listsData, convosData, notesRaw, journalData, clubData, prefsData] = await Promise.all([
+        br.json(), lr.json(), cr.json(), nr.json(), jr.json(), clr.json(), pr.json(),
+      ]);
+      const notes = (notesRaw as { page: number; who: string; noteText: string; when: string }[]).map(
+        (n) => ({ page: n.page, who: n.who, text: n.noteText, when: n.when })
+      );
+      const firstConvo = convosData[0]?.id ?? "";
+      set({
+        books: booksData, lists: listsData,
+        convos: convosData, convo: firstConvo,
+        notes, journalEntries: journalData,
+        proposals: clubData,
+        shelfColors: prefsData.shelfColors ?? {},
+        yearGoal: prefsData.yearGoal ?? 0,
+        readBook: prefsData.readBook ?? "",
+        myPage: prefsData.myPage ?? 0,
+        pageInput: String(prefsData.myPage || ""),
+        hydrated: true,
+      });
     } catch {
       set({ hydrated: true });
     }
@@ -322,8 +350,15 @@ export const useStore = create<AppState>((set, get) => ({
   setShelfSort: (s) => set({ shelfSort: s }),
   setAdvFilters: (f) => set((s) => ({ advFilters: { ...s.advFilters, ...f } })),
   setPalWaveSize: (n) => set({ palWaveSize: n }),
-  setShelfColor: (shelf, color) => set((s) => ({ shelfColors: { ...s.shelfColors, [shelf]: color } })),
-  setYearGoal: (n) => set({ yearGoal: n }),
+  setShelfColor: (shelf, color) => set((s) => {
+    const shelfColors = { ...s.shelfColors, [shelf]: color };
+    fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shelfColors }) }).catch(() => {});
+    return { shelfColors };
+  }),
+  setYearGoal: (n) => {
+    set({ yearGoal: n });
+    fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ yearGoal: n }) }).catch(() => {});
+  },
 
   importGoodreads(csv) {
     const lines = csv.split("\n").filter(Boolean);
@@ -464,6 +499,46 @@ export const useStore = create<AppState>((set, get) => ({
       bookId, pagesRead, note,
     };
     set((s) => ({ journalEntries: [entry, ...s.journalEntries] }));
+    fetch("/api/journal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+    }).catch(() => {});
+  },
+
+  // ── Club ──
+  voteProposal(bookId) {
+    set((s) => {
+      const updated = s.proposals.map((p) =>
+        p.bookId === bookId
+          ? { ...p, votes: p.votedByMe ? p.votes - 1 : p.votes + 1, votedByMe: !p.votedByMe }
+          : p
+      );
+      const p = updated.find((p) => p.bookId === bookId);
+      if (p) {
+        fetch(`/api/club/${bookId}/vote`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ votes: p.votes, votedByMe: p.votedByMe }),
+        }).catch(() => {});
+      }
+      return { proposals: updated };
+    });
+  },
+
+  proposeBook(book) {
+    if (get().proposals.some((p) => p.bookId === book.id)) {
+      get().ping("Ce livre est déjà proposé.");
+      return;
+    }
+    const proposal: Proposal = { bookId: book.id, votes: 1, votedByMe: true };
+    set((s) => ({ proposals: [...s.proposals, proposal] }));
+    fetch("/api/club", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(proposal),
+    }).catch(() => {});
+    get().ping(`« ${book.title} » proposé au club !`);
   },
 
   // ── Kindle import ──
@@ -537,14 +612,22 @@ export const useStore = create<AppState>((set, get) => ({
   sendDraft() {
     const { draft, convo } = get();
     if (!draft.trim()) return;
-    set((s) => ({
-      convos: s.convos.map((c) =>
+    set((s) => {
+      const updated = s.convos.map((c) =>
         c.id === convo
-          ? { ...c, messages: [...c.messages, { from: "me", text: draft.trim() }] }
+          ? { ...c, messages: [...c.messages, { from: "me" as const, text: draft.trim() }], time: "maintenant" }
           : c
-      ),
-      draft: "",
-    }));
+      );
+      const updatedConvo = updated.find((c) => c.id === convo);
+      if (updatedConvo) {
+        fetch(`/api/conversations/${convo}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: updatedConvo.messages, time: "maintenant" }),
+        }).catch(() => {});
+      }
+      return { convos: updated, draft: "" };
+    });
   },
 
   addToMyPal(bookId) {
@@ -560,7 +643,10 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // ── Shared reading ──
-  setReadBook: (id) => set({ readBook: id }),
+  setReadBook: (id) => {
+    set({ readBook: id });
+    fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ readBook: id }) }).catch(() => {});
+  },
 
   toggleInvite(name) {
     set((s) => ({
@@ -585,6 +671,7 @@ export const useStore = create<AppState>((set, get) => ({
     if (isNaN(page) || page < 0) return;
     const prev = get().myPage;
     set({ myPage: page });
+    fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ myPage: page }) }).catch(() => {});
     const unlocked = get().notes.filter((n) => n.page <= page && n.page > prev);
     if (unlocked.length) get().ping(`${unlocked.length} note(s) débloquée(s) 🔓`);
   },
@@ -596,8 +683,15 @@ export const useStore = create<AppState>((set, get) => ({
     const { notePage, noteText } = get();
     const page = parseInt(notePage, 10);
     if (isNaN(page) || !noteText.trim()) return;
-    const note: SealedNote = { page, who: "Moi", text: noteText.trim(), when: "maintenant" };
+    const id = `n${Date.now()}`;
+    const text = noteText.trim();
+    const note: SealedNote = { page, who: "Moi", text, when: "maintenant" };
     set((s) => ({ notes: [...s.notes, note].sort((a, b) => a.page - b.page), noteText: "" }));
+    fetch("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, page, who: "Moi", noteText: text, when: "maintenant" }),
+    }).catch(() => {});
   },
 
   // ── Toast ──
