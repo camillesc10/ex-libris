@@ -5,7 +5,7 @@ const NAV = [
   { key: "shelf" as const, icon: "▤", short: "Étagère" },
   { key: "search" as const, icon: "＋", short: "Ajouter" },
   { key: "lists" as const, icon: "☰", short: "Listes" },
-  { key: "club" as const, icon: "⚑", short: "Club" },
+  { key: "sync" as const, icon: "⇌", short: "Ensemble" },
   { key: "journal" as const, icon: "✎", short: "Journal" },
 ];
 

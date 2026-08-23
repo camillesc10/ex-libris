@@ -17,7 +17,7 @@ function BookSheetContent({ book }: { book: Book }) {
   const {
     layout, lists, books,
     openBook, setLayout, patchBook, addPlatform, navigate, setReadBook,
-    ping,
+    ping, readBook,
   } = useStore();
 
   const [tropeDraft, setTropeDraft] = useState("");
@@ -90,7 +90,6 @@ function BookSheetContent({ book }: { book: Book }) {
     patch((b) => ({ ...b, lists: b.lists.includes(name) ? b.lists.filter((l) => l !== name) : [...b.lists, name] }));
   }
   function handleAddPlatform() { addPlatform(book.id, platformDraft); setPlatformDraft(""); }
-  function recommend() { navigate("messages"); openBook(null); ping(`Recommandation envoyée pour « ${book.title} » ✉`); }
   function startTogether() { setReadBook(book.id); navigate("sync"); openBook(null); ping(`Choisis avec qui tu lis « ${book.title} ».`); }
 
   function addPageNote() {
@@ -266,8 +265,16 @@ function BookSheetContent({ book }: { book: Book }) {
 
               {/* Actions */}
               <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 16 }}>
-                <button onClick={recommend} style={{ padding: 12, borderRadius: 12, background: "var(--accent)", color: "#161C2F", fontSize: 13.5, fontWeight: 600 }}>Recommander à une amie</button>
-                <button onClick={startTogether} style={{ padding: 12, borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", fontSize: 13.5, fontWeight: 600 }}>Lire ensemble</button>
+{readBook === book.id ? (
+                  <button
+                    onClick={() => { setReadBook(""); ping(`Lecture partagée de « ${book.title} » annulée.`); }}
+                    style={{ padding: 12, borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", fontSize: 13.5, fontWeight: 600, color: "var(--muted)" }}
+                  >
+                    Annuler la lecture partagée
+                  </button>
+                ) : (
+                  <button onClick={startTogether} style={{ padding: 12, borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", fontSize: 13.5, fontWeight: 600 }}>Lire ensemble</button>
+                )}
               </div>
 
               {/* FNAC buy link (#113) */}
