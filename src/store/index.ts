@@ -113,6 +113,7 @@ interface AppState {
   addFromApi: (r: SearchResult) => void;
 
   addList: () => void;
+  deleteList: (name: string) => void;
   setNewList: (v: string) => void;
 
   openConvo: (id: string) => void;
@@ -424,6 +425,15 @@ export const useStore = create<AppState>((set, get) => ({
 
   // ── Lists ──
   setNewList: (v) => set({ newList: v }),
+
+  deleteList(name) {
+    set((s) => ({
+      lists: s.lists.filter((l) => l.name !== name),
+      books: s.books.map((b) => ({ ...b, lists: b.lists.filter((n) => n !== name) })),
+      listFilter: s.listFilter === name ? null : s.listFilter,
+    }));
+    fetch(`/api/lists/${encodeURIComponent(name)}`, { method: "DELETE" }).catch(() => {});
+  },
 
   addList() {
     const name = get().newList.trim();

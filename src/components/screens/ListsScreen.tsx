@@ -1,8 +1,10 @@
 "use client";
 import { useStore } from "@/store";
 
+const DEFAULT_SHELVES = new Set(["En cours", "PAL", "Déjà lu", "En pause", "À relire", "Abandonné"]);
+
 export default function ListsScreen() {
-  const { books, lists, newList, setNewList, addList, openBook } = useStore();
+  const { books, lists, newList, setNewList, addList, deleteList, openBook } = useStore();
 
   return (
     <div style={{ padding: "30px 38px" }} className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]">
@@ -35,15 +37,40 @@ export default function ListsScreen() {
         {lists.map((l) => {
           const listBooks = books.filter((b) => b.lists.includes(l.name)).slice(0, 5);
           const count = books.filter((b) => b.lists.includes(l.name)).length;
+          const isDefault = DEFAULT_SHELVES.has(l.name);
           return (
             <div
               key={l.name}
-              style={{ border: "1px solid var(--line)", borderRadius: 18, background: "var(--surface)", padding: 20 }}
+              style={{ border: "1px solid var(--line)", borderRadius: 18, background: "var(--surface)", padding: 20, position: "relative" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 3, background: l.dot, flexShrink: 0 }} />
                 <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17 }}>{l.name}</span>
-                <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--muted)" }}>{count} livre(s)</span>
+                <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--muted)", marginRight: isDefault ? 0 : 28 }}>
+                  {count} livre(s)
+                </span>
+                {!isDefault && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`Supprimer la liste « ${l.name} » ? Les livres resteront dans ta bibliothèque.`)) {
+                        deleteList(l.name);
+                      }
+                    }}
+                    title="Supprimer cette liste"
+                    style={{
+                      position: "absolute", top: 14, right: 14,
+                      width: 24, height: 24, borderRadius: 6,
+                      background: "transparent", border: "1px solid var(--line)",
+                      fontSize: 13, color: "var(--muted)", lineHeight: 1,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", transition: "all .12s",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,50,50,.12)"; (e.currentTarget as HTMLButtonElement).style.color = "#e05555"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#e05555"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--muted)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--line)"; }}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
               <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 16 }}>{l.desc}</div>
               <div style={{ display: "flex", gap: 10, alignItems: "flex-end", minHeight: 104 }}>
