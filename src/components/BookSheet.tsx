@@ -389,7 +389,29 @@ function BookSheetContent({ book }: { book: Book }) {
                 </div>
               )}
 
-              <p style={{ fontSize: 14.5, lineHeight: 1.7, color: "var(--muted)", margin: "0 0 26px", maxWidth: 560, textWrap: "pretty" }}>{book.resume}</p>
+              {/* Infos de base */}
+              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
+                <div style={labelStyle}>Informations</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <input value={book.title} onChange={(e) => patch((b) => ({ ...b, title: e.target.value }))} placeholder="Titre" style={inputStyle} />
+                  <input value={book.author} onChange={(e) => patch((b) => ({ ...b, author: e.target.value }))} placeholder="Auteur·ice" style={inputStyle} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Année</div>
+                      <input value={book.year} onChange={(e) => patch((b) => ({ ...b, year: e.target.value }))} placeholder="2024" style={inputStyle} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Pages</div>
+                      <input type="number" min={0} value={book.pages || ""} onChange={(e) => patch((b) => ({ ...b, pages: parseInt(e.target.value, 10) || 0 }))} placeholder="350" style={inputStyle} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Langue</div>
+                      <input value={book.lang} onChange={(e) => patch((b) => ({ ...b, lang: e.target.value.toUpperCase().slice(0, 2) }))} placeholder="FR" maxLength={2} style={inputStyle} />
+                    </div>
+                  </div>
+                  <textarea value={book.resume} onChange={(e) => patch((b) => ({ ...b, resume: e.target.value }))} placeholder="Résumé…" rows={3} style={{ width: "100%", resize: "vertical", padding: "9px 11px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 13.5, lineHeight: 1.6, outline: "none" }} />
+                </div>
+              </div>
 
               {/* Spice + Rating */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 22 }} className="max-[820px]:!grid-cols-1">
