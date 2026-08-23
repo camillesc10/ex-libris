@@ -161,7 +161,7 @@ export default function TimelineScreen() {
                           color: b.ink,
                           fontFamily: "var(--font-cinzel, Cinzel, serif)",
                           fontSize: 11,
-                          padding: "8px 6px",
+                          padding: b.coverUrl ? 0 : "8px 6px",
                           textAlign: "left",
                           lineHeight: 1.2,
                           overflow: "hidden",
@@ -173,21 +173,16 @@ export default function TimelineScreen() {
                           flexDirection: "column",
                           justifyContent: "space-between",
                           transition: "transform .15s",
+                          position: "relative",
                         }}
                       >
-                        <span
-                          style={{
-                            overflow: "hidden",
-                            maxHeight: 64,
-                            display: "block",
-                          }}
-                        >
-                          {b.title}
-                        </span>
-                        {b.rating > 0 && (
-                          <span style={{ fontSize: 9, opacity: 0.85 }}>
-                            {"★".repeat(b.rating)}
-                          </span>
+                        {b.coverUrl ? (
+                          <img src={b.coverUrl} alt={b.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <>
+                            <span style={{ overflow: "hidden", maxHeight: 64, display: "block" }}>{b.title}</span>
+                            {b.rating > 0 && <span style={{ fontSize: 9, opacity: 0.85 }}>{"★".repeat(b.rating)}</span>}
+                          </>
                         )}
                       </button>
                     ))}

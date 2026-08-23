@@ -34,7 +34,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="max-[820px]:hidden"
+      className="max-[820px]:!hidden"
       style={{
         borderRight: "1px solid var(--line)", padding: "26px 18px",
         display: "flex", flexDirection: "column", gap: 20,
