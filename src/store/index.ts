@@ -457,27 +457,18 @@ export const useStore = create<AppState>((set, get) => ({
     set({ screen: "search", searching: true, results: [], source: "Google Books" });
     let rs: SearchResult[] = [];
     try {
-      const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?maxResults=12&printType=books&q=${encodeURIComponent(q)}`
-      );
+      const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
       const j = await res.json();
-      rs = (j.items || []).map((it: Record<string, unknown>) => {
-        const v = (it.volumeInfo as Record<string, unknown>) || {};
-        const il = (v.imageLinks as Record<string, string>) || {};
-        const cover = (il.medium ?? il.thumbnail ?? il.smallThumbnail ?? "")
-          .replace("http://", "https://")
-          .replace("&edge=curl", "");
-        return {
-          key: it.id as string,
-          title: (v.title as string) || "Sans titre",
-          author: ((v.authors as string[]) || ["Auteur inconnu"]).join(", "),
-          year: ((v.publishedDate as string) || "").slice(0, 4) || "—",
-          snippet: ((v.description as string) || "Pas de résumé fourni par l'API.").slice(0, 180) + "…",
-          cover,
-          pages: (v.pageCount as number) || 320,
-          lang: ((v.language as string) || "fr").toUpperCase(),
-        };
-      });
+      rs = (j.items || []).map((it: { id: string; title: string; author: string; year: string; snippet: string; cover: string | null; pages: number; lang: string }) => ({
+        key: it.id,
+        title: it.title || "Sans titre",
+        author: it.author || "Auteur inconnu",
+        year: it.year || "—",
+        snippet: it.snippet ? it.snippet.slice(0, 180) + "…" : "Pas de résumé fourni par l'API.",
+        cover: it.cover ?? "",
+        pages: it.pages || 320,
+        lang: it.lang || "FR",
+      }));
     } catch {
       rs = [];
     }

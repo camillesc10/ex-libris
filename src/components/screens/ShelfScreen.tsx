@@ -521,11 +521,16 @@ export default function ShelfScreen() {
                 g.isSaga ? (
                   <div
                     key={`saga-${gi}`}
-                    style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center", flexShrink: 0 }}
+                    style={{
+                      display: "flex", flexDirection: "column", gap: 6, alignItems: "center", flexShrink: 0,
+                      border: "1px solid var(--line)", borderRadius: 14,
+                      padding: "10px 12px 12px",
+                      background: "rgba(255,255,255,.02)",
+                    }}
                   >
                     <span style={{
                       fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase",
-                      color: "var(--accent)", maxWidth: 160, textAlign: "center", lineHeight: 1.3,
+                      color: "var(--accent)", maxWidth: 260, textAlign: "center", lineHeight: 1.3,
                     }}>
                       {g.series}
                     </span>
