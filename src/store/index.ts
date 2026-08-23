@@ -193,17 +193,17 @@ export const useStore = create<AppState>((set, get) => ({
   added: [],
 
   convos: SEED_CONVOS.map((c) => ({ ...c, messages: [...c.messages] })),
-  convo: "c1",
+  convo: "",
   draft: "",
   pal: [],
 
-  readBook: "b1",
+  readBook: "",
   readers: SEED_READERS.map((r) => ({ ...r })),
-  invites: ["Camille"],
-  myPage: 214,
-  pageInput: "214",
+  invites: [],
+  myPage: 0,
+  pageInput: "",
   notes: [...SEED_NOTES],
-  notePage: "230",
+  notePage: "",
   noteText: "",
 
   hydrated: false,

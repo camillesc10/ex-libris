@@ -13,7 +13,7 @@ export async function GET() {
     }
     return NextResponse.json(rows);
   } catch {
-    return NextResponse.json(SEED_LISTS);
+    return NextResponse.json([]);
   }
 }
 
