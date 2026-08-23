@@ -117,7 +117,7 @@ function BookSheetContent({ book }: { book: Book }) {
     setFetchingInfo(true);
     try {
       const q = encodeURIComponent(`${book.title} ${book.author}`);
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=5&q=${q}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=5&printType=books&q=${q}`);
       const j = await res.json();
       const items: Record<string, unknown>[] = j.items || [];
       if (!items.length) { ping("Aucun résultat trouvé sur Google Books."); return; }
@@ -126,15 +126,14 @@ function BookSheetContent({ book }: { book: Book }) {
       let best = items[0];
       for (const it of items) {
         const il = ((it.volumeInfo as Record<string, unknown>)?.imageLinks as Record<string, string>) || {};
-        if (il.thumbnail || il.smallThumbnail) { best = it; break; }
+        if (il.medium || il.thumbnail || il.smallThumbnail) { best = it; break; }
       }
 
       const v = (best.volumeInfo as Record<string, unknown>) || {};
       const il = (v.imageLinks as Record<string, string>) || {};
-      // zoom=0 gives a larger image than zoom=1
-      let coverUrl = (il.thumbnail || il.smallThumbnail || "")
+      let coverUrl = (il.medium ?? il.thumbnail ?? il.smallThumbnail ?? "")
         .replace("http://", "https://")
-        .replace("zoom=1", "zoom=0");
+        .replace("&edge=curl", "");
 
       // Fallback: Open Library cover via ISBN
       if (!coverUrl) {
