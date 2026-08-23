@@ -98,7 +98,7 @@ interface AppState {
   toastTimer: ReturnType<typeof setTimeout> | null;
 
   // Actions
-  submitAuth: () => void;
+  submitAuth: () => Promise<void>;
   toggleAuth: () => void;
   setFormField: (k: "name" | "email" | "pass", v: string) => void;
   logout: () => void;
@@ -162,9 +162,9 @@ interface AppState {
 export const useStore = create<AppState>((set, get) => ({
   auth: false,
   mode: "login",
-  form: { name: "", email: "lila@exemple.fr", pass: "" },
+  form: { name: "", email: "", pass: "" },
   authError: "",
-  user: "Lila",
+  user: "",
 
   theme: "constelle",
   layout: "colonnes",
@@ -220,7 +220,7 @@ export const useStore = create<AppState>((set, get) => ({
   toastTimer: null,
 
   // ── Auth ──
-  submitAuth() {
+  async submitAuth() {
     const { form, mode } = get();
     if (!/.+@.+\..+/.test(form.email)) {
       set({ authError: "Il manque un e-mail valide." });
@@ -230,7 +230,36 @@ export const useStore = create<AppState>((set, get) => ({
       set({ authError: "Mot de passe : 4 caractères minimum." });
       return;
     }
-    set({ auth: true, authError: "", user: mode === "signup" ? (form.name || "Toi") : "Lila" });
+    try {
+      if (mode === "signup") {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, name: form.name, password: form.pass }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          set({ authError: data.error || "Erreur à l'inscription." });
+          return;
+        }
+        set({ auth: true, authError: "", user: form.name || "Lectrice" });
+      } else {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, password: form.pass }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          set({ authError: data.error || "Identifiants incorrects." });
+          return;
+        }
+        const data = await res.json();
+        set({ auth: true, authError: "", user: data.name || "Lectrice" });
+      }
+    } catch {
+      set({ authError: "Erreur réseau — réessaie." });
+    }
   },
 
   toggleAuth() {

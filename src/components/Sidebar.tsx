@@ -9,7 +9,7 @@ const THEMES: { key: Theme; label: string; swatch: string }[] = [
 
 export default function Sidebar() {
   const {
-    screen, books, lists, theme, user, yearGoal,
+    screen, books, lists, convos, readers, theme, user, yearGoal,
     navigate, setListFilter, setTheme, logout, listFilter, setYearGoal,
   } = useStore();
 
@@ -28,8 +28,8 @@ export default function Sidebar() {
     { key: "authors" as const, label: "Auteurs", count: new Set(books.map((b) => b.author)).size },
     { key: "journal" as const, label: "Journal", count: "" },
     { key: "timeline" as const, label: "Chronologie", count: "" },
-    { key: "messages" as const, label: "Messages", count: 3 },
-    { key: "sync" as const, label: "Lecture partagée", count: 2 },
+    { key: "messages" as const, label: "Messages", count: convos.length || "" },
+    { key: "sync" as const, label: "Lecture partagée", count: readers.length || "" },
     { key: "club" as const, label: "Club de lecture", count: "" },
     { key: "compare" as const, label: "Comparer", count: "" },
   ];
