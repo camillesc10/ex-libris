@@ -113,6 +113,7 @@ interface AppState {
   openBook: (id: string | null) => void;
 
   patchBook: (id: string, fn: (b: Book) => Book) => void;
+  deleteBook: (id: string) => void;
   addPlatform: (bookId: string, raw: string) => void;
   updatePage: (bookId: string, page: number) => void;
 
@@ -339,6 +340,10 @@ export const useStore = create<AppState>((set, get) => ({
       }
       return { books: updated };
     });
+  },
+
+  deleteBook(id) {
+    set((s) => ({ books: s.books.filter((b) => b.id !== id), open: s.open === id ? null : s.open }));
   },
 
   addPlatform(bookId, raw) {

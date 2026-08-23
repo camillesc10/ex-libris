@@ -16,7 +16,7 @@ export default function BookSheet() {
 function BookSheetContent({ book }: { book: Book }) {
   const {
     layout, lists, books,
-    openBook, setLayout, patchBook, addPlatform, navigate, setReadBook,
+    openBook, setLayout, patchBook, deleteBook, addPlatform, navigate, setReadBook,
     ping, readBook,
   } = useStore();
 
@@ -28,6 +28,9 @@ function BookSheetContent({ book }: { book: Book }) {
   const [relatedDraft, setRelatedDraft] = useState("");
   const [confetti, setConfetti] = useState(false);
   const [fetchingInfo, setFetchingInfo] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [coverResults, setCoverResults] = useState<{ cover: string | null; pages: number; snippet: string; year: string; lang: string; isbn: string | null; title: string; author: string }[]>([]);
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -114,37 +117,35 @@ function BookSheetContent({ book }: { book: Book }) {
 
   async function fetchBookInfo() {
     setFetchingInfo(true);
+    setShowCoverPicker(false);
     try {
       const q = `${book.title} ${book.author}`;
       const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
       const j = await res.json();
-      const items: { cover: string | null; pages: number; snippet: string; year: string; lang: string; isbn: string | null }[] = j.items || [];
-      if (!items.length) { ping("Aucun résultat trouvé sur Google Books."); return; }
-
-      // Pick the first result that has a cover, else fall back to the first
-      const best = items.find((it) => it.cover) ?? items[0];
-
-      let coverUrl = best.cover ?? "";
-
-      // Fallback: Open Library cover via ISBN
-      if (!coverUrl && best.isbn) {
-        coverUrl = `https://covers.openlibrary.org/b/isbn/${best.isbn}-L.jpg`;
-      }
-
-      patch((b) => ({
-        ...b,
-        ...(coverUrl ? { coverUrl } : {}),
-        ...(best.pages && !b.pages ? { pages: best.pages } : {}),
-        ...(best.snippet && !b.resume ? { resume: best.snippet.slice(0, 400) + "…" } : {}),
-        ...(best.year && !b.year ? { year: best.year } : {}),
-        ...(best.lang && !b.lang ? { lang: best.lang } : {}),
-      }));
-      ping(coverUrl ? "Couverture et infos récupérées ✓" : "Infos récupérées (pas de couverture disponible).");
+      const items: { cover: string | null; pages: number; snippet: string; year: string; lang: string; isbn: string | null; title: string; author: string }[] = j.items || [];
+      if (!items.length) { ping("Aucun résultat trouvé."); return; }
+      setCoverResults(items);
+      setShowCoverPicker(true);
     } catch {
       ping("Erreur lors de la récupération des infos.");
     } finally {
       setFetchingInfo(false);
     }
+  }
+
+  function applyCoverResult(item: (typeof coverResults)[0]) {
+    let coverUrl = item.cover ?? "";
+    if (!coverUrl && item.isbn) coverUrl = `https://covers.openlibrary.org/b/isbn/${item.isbn}-L.jpg`;
+    patch((b) => ({
+      ...b,
+      ...(coverUrl ? { coverUrl } : {}),
+      ...(item.pages && !b.pages ? { pages: item.pages } : {}),
+      ...(item.snippet && !b.resume ? { resume: item.snippet.slice(0, 400) + "…" } : {}),
+      ...(item.year && !b.year ? { year: item.year } : {}),
+      ...(item.lang && !b.lang ? { lang: item.lang } : {}),
+    }));
+    setShowCoverPicker(false);
+    ping(coverUrl ? "Couverture appliquée ✓" : "Infos appliquées (pas de couverture disponible).");
   }
 
   const tropeSuggestions = TROPES.filter(
@@ -201,7 +202,18 @@ function BookSheetContent({ book }: { book: Book }) {
               </button>
             );
           })}
-          <button onClick={() => openBook(null)} style={{ marginLeft: "auto", width: 32, height: 32, borderRadius: 10, background: "var(--surface2)", fontSize: 14 }}>✕</button>
+          {confirmDelete ? (
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ fontSize: 13, color: "var(--muted)" }}>Supprimer ce livre ?</span>
+              <button onClick={() => deleteBook(book.id)} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.3)", color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Supprimer</button>
+              <button onClick={() => setConfirmDelete(false)} style={{ padding: "6px 12px", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--line)", fontSize: 13, cursor: "pointer" }}>Annuler</button>
+            </div>
+          ) : (
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <button onClick={() => setConfirmDelete(true)} title="Supprimer le livre" style={{ width: 32, height: 32, borderRadius: 10, background: "var(--surface2)", fontSize: 14, color: "var(--muted)", border: "none", cursor: "pointer" }}>🗑</button>
+              <button onClick={() => openBook(null)} style={{ width: 32, height: 32, borderRadius: 10, background: "var(--surface2)", fontSize: 14 }}>✕</button>
+            </div>
+          )}
         </div>
 
         {isImmersif && (
@@ -298,13 +310,23 @@ function BookSheetContent({ book }: { book: Book }) {
                 </a>
               </div>
 
-              {/* Palette from cover image (#107) */}
+              {/* Cover & colour */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
                 <div style={labelStyle}>Couverture &amp; couleur</div>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: book.bg, border: "2px solid var(--line)", flexShrink: 0, overflow: "hidden" }}>
-                    {book.coverUrl && <img src={book.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+
+                {/* Current cover preview */}
+                {book.coverUrl && (
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12, padding: "10px 12px", background: "var(--surface2)", borderRadius: 12, border: "1px solid var(--line)" }}>
+                    <img src={book.coverUrl} alt="Couverture" style={{ width: 50, height: 76, objectFit: "cover", borderRadius: 5, boxShadow: "0 4px 12px rgba(0,0,0,.3)", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>Couverture actuelle</div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{book.title}</div>
+                    </div>
+                    <button onClick={() => patch((b) => ({ ...b, coverUrl: undefined }))} title="Supprimer la couverture" style={{ background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.22)", borderRadius: 7, padding: "4px 8px", color: "#f87171", cursor: "pointer", fontSize: 12, flexShrink: 0 }}>✕</button>
                   </div>
+                )}
+
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <button
                     onClick={fetchBookInfo}
                     disabled={fetchingInfo}
@@ -316,16 +338,44 @@ function BookSheetContent({ book }: { book: Book }) {
                     onClick={() => imgInputRef.current?.click()}
                     style={{ padding: "9px 14px", borderRadius: 10, minHeight: 44, border: "1px solid var(--line)", background: "var(--surface2)", fontSize: 13, color: "var(--ink)" }}
                   >
-                    🖼 Importer la couverture
+                    🖼 Importer
                   </button>
-                  <input
-                    ref={imgInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) extractPaletteFromImage(f); e.target.value = ""; }}
-                  />
+                  <input ref={imgInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) extractPaletteFromImage(f); e.target.value = ""; }} />
                 </div>
+
+                {/* Cover picker results */}
+                {showCoverPicker && coverResults.length > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{coverResults.length} résultat{coverResults.length > 1 ? "s" : ""} — clique pour appliquer</span>
+                      <button onClick={() => setShowCoverPicker(false)} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 16 }}>×</button>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
+                      {coverResults.map((item, i) => {
+                        const coverSrc = item.cover ?? (item.isbn ? `https://covers.openlibrary.org/b/isbn/${item.isbn}-M.jpg` : null);
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => applyCoverResult(item)}
+                            style={{ flexShrink: 0, width: 72, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                          >
+                            <div style={{ width: 72, height: 108, borderRadius: "3px 8px 8px 3px", background: "var(--surface2)", overflow: "hidden", border: "1px solid var(--line)", position: "relative", transition: "transform .12s" }}
+                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.06)"; }}
+                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+                            >
+                              {coverSrc ? (
+                                <img src={coverSrc} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                              ) : (
+                                <div style={{ padding: "6px 5px", fontSize: 9, lineHeight: 1.2, color: "var(--ink)", fontFamily: "var(--font-cinzel, Cinzel, serif)" }}>{item.title}</div>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 9.5, color: "var(--muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 72 }}>{item.title}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
