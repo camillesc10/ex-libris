@@ -21,6 +21,10 @@ const karla = Karla({
 export const metadata: Metadata = {
   title: "Ex-Libris",
   description: "Ta bibliothèque, tes pépites, et les ami·es qui lisent avec toi.",
+  icons: {
+    icon: "/exlibris-favicon.svg",
+    apple: "/exlibris-icon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

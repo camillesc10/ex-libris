@@ -1,6 +1,7 @@
 "use client";
 import { useStore } from "@/store";
 import type { Theme } from "@/types";
+import ExLibrisLogo from "./ExLibrisLogo";
 
 const THEMES: { key: Theme; label: string; swatch: string }[] = [
   { key: "constelle", label: "Nuit constellée", swatch: "#252D46" },
@@ -28,7 +29,7 @@ export default function Sidebar() {
     { key: "authors" as const, label: "Auteurs", count: new Set(books.map((b) => b.author)).size },
     { key: "journal" as const, label: "Journal", count: "" },
     { key: "timeline" as const, label: "Chronologie", count: "" },
-    { key: "messages" as const, label: "Messages", count: convos.length || "" },
+    { key: "messages" as const, label: "Conseils d'amies", count: "" },
     { key: "sync" as const, label: "Lecture partagée", count: readers.length || "" },
     { key: "club" as const, label: "Club de lecture", count: "" },
     { key: "compare" as const, label: "Comparer", count: "" },
@@ -46,17 +47,8 @@ export default function Sidebar() {
       }}
     >
       {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px" }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8, background: "var(--accent)",
-          display: "grid", placeItems: "center", fontSize: 16, color: "#161C2F", fontWeight: 700, flexShrink: 0,
-        }}>✦</div>
-        <span style={{
-          fontFamily: "var(--font-cinzel, Cinzel, serif)",
-          fontSize: 17, letterSpacing: ".18em", textTransform: "uppercase",
-        }}>
-          Ex-Libris
-        </span>
+      <div style={{ padding: "0 8px" }}>
+        <ExLibrisLogo variant="lockup" size={30} />
       </div>
 
       {/* Current book highlight (#56) */}

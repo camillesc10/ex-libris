@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useStore } from "@/store";
 import { COVER_PALETTE } from "@/store/data";
 import StarField from "./StarField";
+import ExLibrisLogo from "./ExLibrisLogo";
 
 const HERO_COVERS = [
   { title: "Une cour de roses et d'épines", author: "Sarah J. Maas", h: 150, ...{ bg: COVER_PALETTE[0][0], ink: COVER_PALETTE[0][1] } },
@@ -62,14 +63,8 @@ export default function AuthPage() {
       <StarField />
 
       {/* Mobile logo */}
-      <div className="md:hidden flex items-center gap-2.5 p-6" style={{ position: "relative", zIndex: 1 }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 8, background: "var(--accent)",
-          display: "grid", placeItems: "center", fontSize: 14, color: "#161C2F", fontWeight: 700,
-        }}>✦</div>
-        <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 18, letterSpacing: ".18em", textTransform: "uppercase" }}>
-          Ex-Libris
-        </span>
+      <div className="md:hidden flex items-center p-6" style={{ position: "relative", zIndex: 1 }}>
+        <ExLibrisLogo variant="lockup" size={28} />
       </div>
 
       <div
@@ -91,14 +86,8 @@ export default function AuthPage() {
             background: "radial-gradient(900px 420px at 78% -10%, rgba(224,184,74,.14), transparent 72%)",
           }} />
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, background: "var(--accent)",
-              display: "grid", placeItems: "center", fontSize: 16, color: "#161C2F", fontWeight: 700, flexShrink: 0,
-            }}>✦</div>
-            <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 19, letterSpacing: ".18em", textTransform: "uppercase" }}>
-              Ex-Libris
-            </span>
+          <div style={{ position: "relative" }}>
+            <ExLibrisLogo variant="lockup" size={32} />
           </div>
 
           <div style={{ maxWidth: 430, position: "relative" }}>
