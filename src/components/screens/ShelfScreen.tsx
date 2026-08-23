@@ -143,7 +143,7 @@ export default function ShelfScreen() {
           onChange={(e) => setLibrarySearch(e.target.value)}
           placeholder="Chercher par titre, auteur ou trope…"
           style={{
-            flex: 1, maxWidth: 380, padding: "10px 14px",
+            flex: 1, padding: "10px 14px",
             border: "1px solid var(--line)", borderRadius: 12,
             background: "var(--surface)", fontSize: 13.5, outline: "none",
           }}

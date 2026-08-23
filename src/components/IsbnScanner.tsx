@@ -10,8 +10,12 @@ export default function IsbnScanner({ onFound, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("Initialisation caméra…");
+  const [manualIsbn, setManualIsbn] = useState("");
+
+  const noDetector = typeof window !== "undefined" && !("BarcodeDetector" in window);
 
   useEffect(() => {
+    if (noDetector) return;
     let stream: MediaStream | null = null;
     let animId: number;
     let stopped = false;
@@ -25,11 +29,6 @@ export default function IsbnScanner({ onFound, onClose }: Props) {
           await videoRef.current.play();
         }
         setStatus("Pointe vers un code-barres ISBN…");
-
-        if (!("BarcodeDetector" in window)) {
-          setError("BarcodeDetector non supporté sur ce navigateur. Utilise Chrome sur Android ou l'app.");
-          return;
-        }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const detector = new (window as any).BarcodeDetector({ formats: ["ean_13", "ean_8", "isbn"] });
@@ -62,7 +61,14 @@ export default function IsbnScanner({ onFound, onClose }: Props) {
       cancelAnimationFrame(animId);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [onFound]);
+  }, [onFound, noDetector]);
+
+  function submitManual() {
+    const isbn = manualIsbn.trim().replace(/[-\s]/g, "");
+    if (/^97[89]\d{10}$/.test(isbn) || /^\d{10}$/.test(isbn)) {
+      onFound(isbn);
+    }
+  }
 
   return (
     <div style={{
@@ -73,7 +79,39 @@ export default function IsbnScanner({ onFound, onClose }: Props) {
         Scanner un ISBN
       </div>
 
-      {error ? (
+      {noDetector ? (
+        /* Manual ISBN input fallback for Safari / iOS */
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, width: "100%", maxWidth: 320, padding: "0 20px" }}>
+          <p style={{ textAlign: "center", color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, margin: 0 }}>
+            Le scan n&apos;est pas disponible sur ce navigateur.<br />Saisis l&apos;ISBN manuellement :
+          </p>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="9782..."
+            value={manualIsbn}
+            onChange={(e) => setManualIsbn(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submitManual()}
+            autoFocus
+            style={{
+              width: "100%", padding: "12px 16px", borderRadius: 12,
+              border: "1px solid var(--line)", background: "var(--surface)",
+              fontSize: 16, color: "var(--ink)", outline: "none", textAlign: "center", letterSpacing: ".08em",
+            }}
+          />
+          <button
+            onClick={submitManual}
+            disabled={!manualIsbn.trim()}
+            style={{
+              width: "100%", padding: "12px", borderRadius: 12,
+              background: "var(--accent)", color: "#161C2F", fontSize: 15, fontWeight: 700,
+              opacity: !manualIsbn.trim() ? 0.5 : 1,
+            }}
+          >
+            Rechercher
+          </button>
+        </div>
+      ) : error ? (
         <div style={{ maxWidth: 360, textAlign: "center", color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>
           {error}
         </div>
@@ -91,7 +129,7 @@ export default function IsbnScanner({ onFound, onClose }: Props) {
         </div>
       )}
 
-      <div style={{ fontSize: 13, color: "var(--muted)" }}>{status}</div>
+      {!noDetector && <div style={{ fontSize: 13, color: "var(--muted)" }}>{status}</div>}
 
       <button
         onClick={onClose}

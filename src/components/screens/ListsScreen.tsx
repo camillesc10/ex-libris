@@ -16,7 +16,7 @@ export default function ListsScreen() {
           onKeyDown={(e) => e.key === "Enter" && addList()}
           placeholder="Nouvelle liste — « comfort reads d'automne »"
           style={{
-            flex: 1, maxWidth: 420, padding: "12px 14px",
+            flex: 1, padding: "12px 14px",
             border: "1px solid var(--line)", borderRadius: 11,
             background: "var(--surface)", fontSize: 14, outline: "none",
           }}
