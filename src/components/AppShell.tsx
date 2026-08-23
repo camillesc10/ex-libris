@@ -16,6 +16,7 @@ import BookSheet from "./BookSheet";
 import Toast from "./Toast";
 import InstallBanner from "./InstallBanner";
 import StarField from "./StarField";
+import ReadingTimer from "./ReadingTimer";
 
 export default function AppShell() {
   const { theme, screen, open, toast, hydrate } = useStore();
@@ -43,6 +44,7 @@ export default function AppShell() {
       {open && <BookSheet />}
       {toast && <Toast />}
       <InstallBanner />
+      <ReadingTimer />
     </div>
   );
 }
