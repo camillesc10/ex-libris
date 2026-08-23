@@ -88,6 +88,12 @@ export interface Reader {
   color: string;
 }
 
+export interface Proposal {
+  bookId: string;
+  votes: number;
+  votedByMe: boolean;
+}
+
 export interface SearchResult {
   key: string;
   title: string;

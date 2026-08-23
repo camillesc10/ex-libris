@@ -1,46 +1,11 @@
 "use client";
-import { useState } from "react";
 import { useStore } from "@/store";
 import type { Book } from "@/types";
 
-interface Proposal {
-  bookId: string;
-  votes: number;
-  votedByMe: boolean;
-}
-
 export default function ClubScreen() {
-  const { books, openBook, ping } = useStore();
+  const { books, openBook, proposals, voteProposal, proposeBook } = useStore();
 
   const palBooks = books.filter((b) => b.lists.includes("PAL"));
-
-  const [proposals, setProposals] = useState<Proposal[]>(() => {
-    const seed = palBooks.slice(0, 3);
-    return seed.map((b, i) => ({
-      bookId: b.id,
-      votes: ([4, 2, 1] as const)[i] ?? 1,
-      votedByMe: false,
-    }));
-  });
-
-  function vote(bookId: string) {
-    setProposals((prev) =>
-      prev.map((p) =>
-        p.bookId === bookId
-          ? { ...p, votes: p.votedByMe ? p.votes - 1 : p.votes + 1, votedByMe: !p.votedByMe }
-          : p
-      )
-    );
-  }
-
-  function propose(book: Book) {
-    if (proposals.some((p) => p.bookId === book.id)) {
-      ping("Ce livre est déjà proposé.");
-      return;
-    }
-    setProposals((prev) => [...prev, { bookId: book.id, votes: 1, votedByMe: true }]);
-    ping(`« ${book.title} » proposé au club !`);
-  }
 
   const sorted = [...proposals].sort((a, b) => b.votes - a.votes);
   const currentPick = sorted.find((p) => p.votes >= 3) ?? null;
@@ -85,7 +50,6 @@ export default function ClubScreen() {
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)"; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
         >
-          {/* Spine mini-cover */}
           <div style={{
             flexShrink: 0, width: 70, height: 104,
             borderRadius: "3px 10px 10px 3px",
@@ -98,8 +62,6 @@ export default function ClubScreen() {
           }}>
             {currentBook.title}
           </div>
-
-          {/* Info */}
           <div>
             <div style={{
               fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 19,
@@ -169,7 +131,6 @@ export default function ClubScreen() {
                   transition: "background .12s",
                 }}
               >
-                {/* Rank */}
                 <div style={{
                   flexShrink: 0, width: 24, textAlign: "center",
                   fontSize: 13, color: rank < 3 ? "var(--accent)" : "var(--muted)",
@@ -177,8 +138,6 @@ export default function ClubScreen() {
                 }}>
                   {rank + 1}
                 </div>
-
-                {/* Mini cover */}
                 <button
                   onClick={() => openBook(book.id)}
                   title={book.title}
@@ -194,8 +153,6 @@ export default function ClubScreen() {
                 >
                   {book.title}
                 </button>
-
-                {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontFamily: "var(--font-cinzel, Cinzel, serif)",
@@ -206,10 +163,8 @@ export default function ClubScreen() {
                   </div>
                   <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{book.author}</div>
                 </div>
-
-                {/* Vote button */}
                 <button
-                  onClick={() => vote(p.bookId)}
+                  onClick={() => voteProposal(p.bookId)}
                   aria-label={p.votedByMe ? "Retirer mon vote" : "Voter pour ce livre"}
                   style={{
                     flexShrink: 0,
@@ -247,10 +202,10 @@ export default function ClubScreen() {
         </div>
       ) : (
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {unproposed.map((b) => (
+          {unproposed.map((b: Book) => (
             <button
               key={b.id}
-              onClick={() => propose(b)}
+              onClick={() => proposeBook(b)}
               style={{
                 padding: "10px 16px", borderRadius: 10, minHeight: 44,
                 border: "1px solid var(--line)", background: "var(--surface)",

@@ -1,4 +1,4 @@
-import { pgTable, text, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, jsonb, boolean } from "drizzle-orm/pg-core";
 import type { Platform, PageNote } from "@/types";
 
 export const books = pgTable("books", {
@@ -44,4 +44,43 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").default(""),
   passwordHash: text("password_hash").notNull(),
+});
+
+export const conversations = pgTable("conversations", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  initial: text("initial").notNull(),
+  avatarBg: text("avatar_bg").notNull(),
+  time: text("time").default(""),
+  messages: jsonb("messages").$type<import("@/types").Message[]>().default([]),
+});
+
+export const sealedNotes = pgTable("sealed_notes", {
+  id: text("id").primaryKey(),
+  page: integer("page").notNull(),
+  who: text("who").notNull(),
+  noteText: text("note_text").notNull(),
+  when: text("when").notNull(),
+});
+
+export const journalEntries = pgTable("journal_entries", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),
+  bookId: text("book_id").notNull(),
+  pagesRead: integer("pages_read").default(0),
+  note: text("note").default(""),
+});
+
+export const clubProposals = pgTable("club_proposals", {
+  bookId: text("book_id").primaryKey(),
+  votes: integer("votes").default(1),
+  votedByMe: boolean("voted_by_me").default(false),
+});
+
+export const userPrefs = pgTable("user_prefs", {
+  id: text("id").primaryKey(),
+  shelfColors: jsonb("shelf_colors").$type<Record<string, string>>().default({}),
+  yearGoal: integer("year_goal").default(0),
+  readBook: text("read_book").default(""),
+  myPage: integer("my_page").default(0),
 });
