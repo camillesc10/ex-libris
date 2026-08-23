@@ -9,14 +9,25 @@ const THEMES: { key: Theme; label: string; swatch: string }[] = [
 
 export default function Sidebar() {
   const {
-    screen, books, lists, theme, user,
-    navigate, setListFilter, setTheme, logout, listFilter,
+    screen, books, lists, theme, user, yearGoal,
+    navigate, setListFilter, setTheme, logout, listFilter, setYearGoal,
   } = useStore();
+
+  const currentYear = new Date().getFullYear();
+  const readThisYear = books.filter(
+    (b) => b.finishedAt && new Date(b.finishedAt).getFullYear() === currentYear
+  ).length;
+  const goalPct = yearGoal > 0 ? Math.min(100, Math.round((readThisYear / yearGoal) * 100)) : 0;
+
+  const currentBook = books.find((b) => b.lists.includes("En cours"));
 
   const nav = [
     { key: "shelf" as const, label: "Mon étagère", count: books.length },
     { key: "search" as const, label: "Ajouter un livre", count: "＋" },
     { key: "lists" as const, label: "Mes listes", count: lists.length },
+    { key: "authors" as const, label: "Auteurs", count: new Set(books.map((b) => b.author)).size },
+    { key: "journal" as const, label: "Journal", count: "" },
+    { key: "timeline" as const, label: "Chronologie", count: "" },
     { key: "messages" as const, label: "Messages", count: 3 },
     { key: "sync" as const, label: "Lecture partagée", count: 2 },
   ];
@@ -26,8 +37,8 @@ export default function Sidebar() {
       className="max-[820px]:hidden"
       style={{
         borderRight: "1px solid var(--line)", padding: "26px 18px",
-        display: "flex", flexDirection: "column", gap: 26,
-        position: "sticky", top: 0, height: "100vh",
+        display: "flex", flexDirection: "column", gap: 20,
+        position: "sticky", top: 0, height: "100vh", overflowY: "auto",
         background: "color-mix(in srgb, var(--bg) 80%, transparent)",
         backdropFilter: "blur(12px)",
       }}
@@ -45,6 +56,38 @@ export default function Sidebar() {
           Ex-Libris
         </span>
       </div>
+
+      {/* Current book highlight (#56) */}
+      {currentBook && (
+        <button
+          onClick={() => navigate("shelf")}
+          style={{
+            margin: "0 4px",
+            background: "var(--soft)",
+            border: "1px solid var(--line)",
+            borderLeft: `3px solid ${currentBook.bg}`,
+            borderRadius: 10,
+            padding: "10px 12px",
+            textAlign: "left",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>
+            En cours
+          </div>
+          <div style={{ fontSize: 13, fontFamily: "var(--font-cinzel, Cinzel, serif)", lineHeight: 1.3, marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+            {currentBook.title}
+          </div>
+          {currentBook.pages > 0 && (
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>
+              p. {currentBook.page} / {currentBook.pages}
+              <span style={{ marginLeft: 6, color: "var(--accent)" }}>
+                {Math.round((currentBook.page / currentBook.pages) * 100)}%
+              </span>
+            </div>
+          )}
+        </button>
+      )}
 
       {/* Main nav */}
       <nav style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -75,8 +118,8 @@ export default function Sidebar() {
       </nav>
 
       {/* Lists section */}
-      <div style={{ borderTop: "1px solid var(--line)", paddingTop: 20 }}>
-        <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 12, padding: "0 12px" }}>
+      <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+        <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10, padding: "0 12px" }}>
           Mes listes
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -108,6 +151,43 @@ export default function Sidebar() {
       </div>
 
       <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
+        {/* Annual goal (#4) */}
+        <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "0 12px" }}>
+            <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)" }}>
+              Objectif {currentYear}
+            </div>
+            <input
+              type="number"
+              min={0}
+              value={yearGoal || ""}
+              onChange={(e) => setYearGoal(parseInt(e.target.value, 10) || 0)}
+              placeholder="—"
+              style={{
+                width: 44, padding: "3px 6px", border: "1px solid var(--line)",
+                borderRadius: 6, background: "var(--surface2)", fontSize: 12,
+                color: "var(--ink)", textAlign: "center", outline: "none",
+              }}
+            />
+          </div>
+          {yearGoal > 0 && (
+            <div style={{ padding: "0 12px" }}>
+              <div style={{ height: 5, borderRadius: 999, background: "var(--line)", overflow: "hidden", marginBottom: 5 }}>
+                <div style={{
+                  height: "100%", borderRadius: 999,
+                  width: `${goalPct}%`,
+                  background: goalPct >= 100 ? "#4caf50" : "var(--accent)",
+                  transition: "width .4s",
+                }} />
+              </div>
+              <div style={{ fontSize: 11, color: "var(--muted)", display: "flex", justifyContent: "space-between" }}>
+                <span>{readThisYear} lu{readThisYear > 1 ? "s" : ""}</span>
+                <span style={{ color: goalPct >= 100 ? "#4caf50" : "var(--accent)" }}>{goalPct}%</span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Theme picker */}
         <div>
           <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 9, padding: "0 12px" }}>

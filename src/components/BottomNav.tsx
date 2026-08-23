@@ -5,8 +5,8 @@ const NAV = [
   { key: "shelf" as const, icon: "▤", short: "Étagère" },
   { key: "search" as const, icon: "＋", short: "Ajouter" },
   { key: "lists" as const, icon: "☰", short: "Listes" },
-  { key: "messages" as const, icon: "✉", short: "Messages" },
-  { key: "sync" as const, icon: "◑", short: "Partagée" },
+  { key: "journal" as const, icon: "✎", short: "Journal" },
+  { key: "timeline" as const, icon: "◷", short: "Timeline" },
 ];
 
 export default function BottomNav() {

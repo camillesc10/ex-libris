@@ -1,4 +1,5 @@
 "use client";
+import { useState, useRef } from "react";
 import { useStore } from "@/store";
 import { FRIENDS, CHECKPOINTS } from "@/store/data";
 
@@ -7,8 +8,34 @@ export default function SyncScreen() {
     books, readBook, readers, invites, myPage, pageInput, notes, notePage, noteText,
     flow,
     setReadBook, toggleInvite, launchRead, setPageInput, declarePage,
-    setNotePage, setNoteText, addNote, setFlow,
+    setNotePage, setNoteText, addNote, setFlow, importKindle, ping,
   } = useStore();
+
+  const kindleRef = useRef<HTMLInputElement>(null);
+  const [notifStatus, setNotifStatus] = useState<"default" | "granted" | "denied">(
+    typeof Notification !== "undefined" ? (Notification.permission as "default" | "granted" | "denied") : "default"
+  );
+
+  function handleKindleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const txt = ev.target?.result as string;
+      if (txt) importKindle(txt);
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
+  }
+
+  async function requestNotifications() {
+    if (typeof Notification === "undefined") return;
+    const perm = await Notification.requestPermission();
+    setNotifStatus(perm as "granted" | "denied");
+    if (perm === "granted") {
+      ping("Notifications activées !");
+    }
+  }
 
   const rb = books.find((b) => b.id === readBook);
   const totalPages = rb?.pages ?? 640;
@@ -277,6 +304,56 @@ export default function SyncScreen() {
           </div>
         </div>
       )}
+
+      {/* Kindle import (#60) */}
+      <div style={{ border: "1px solid var(--line)", borderRadius: 20, background: "var(--surface)", padding: "20px 24px", marginBottom: 26 }}>
+        <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17, marginBottom: 8 }}>
+          Importer des surlignages Kindle
+        </div>
+        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>
+          Charge ton fichier <code style={{ background: "var(--surface2)", padding: "2px 6px", borderRadius: 5 }}>My Clippings.txt</code> pour retrouver tes annotations dans les fiches de tes livres.
+        </div>
+        <input ref={kindleRef} type="file" accept=".txt" style={{ display: "none" }} onChange={handleKindleFile} />
+        <button
+          onClick={() => kindleRef.current?.click()}
+          style={{
+            padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 600,
+            background: "var(--accent)", color: "#161C2F", cursor: "pointer", border: "none",
+          }}
+        >
+          Choisir My Clippings.txt
+        </button>
+      </div>
+
+      {/* Push notifications (#18) */}
+      <div style={{ border: "1px solid var(--line)", borderRadius: 20, background: "var(--surface)", padding: "20px 24px", marginBottom: 26 }}>
+        <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17, marginBottom: 8 }}>
+          Notifications de lecture partagée
+        </div>
+        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>
+          Reçois une alerte quand une amie franchit un nouveau jalon dans votre lecture commune.
+        </div>
+        {notifStatus === "granted" ? (
+          <div style={{ fontSize: 13, color: "#4caf50", display: "flex", alignItems: "center", gap: 8 }}>
+            <span>✓</span> Notifications activées
+          </div>
+        ) : notifStatus === "denied" ? (
+          <div style={{ fontSize: 13, color: "var(--muted)" }}>
+            Notifications bloquées — autorise-les dans les réglages du navigateur.
+          </div>
+        ) : (
+          <button
+            onClick={requestNotifications}
+            style={{
+              padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 600,
+              border: "1px solid var(--accent)", background: "transparent",
+              color: "var(--accent)", cursor: "pointer",
+            }}
+          >
+            Activer les notifications
+          </button>
+        )}
+      </div>
 
       {/* Flow: Jalons */}
       {flow === "jalons" && (
