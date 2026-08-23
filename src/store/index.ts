@@ -60,6 +60,10 @@ interface AppState {
   notePage: string;
   noteText: string;
 
+  // Persistence
+  hydrated: boolean;
+  hydrate: () => Promise<void>;
+
   // UI
   toast: string;
   toastTimer: ReturnType<typeof setTimeout> | null;
@@ -153,6 +157,8 @@ export const useStore = create<AppState>((set, get) => ({
   notePage: "230",
   noteText: "",
 
+  hydrated: false,
+
   toast: "",
   toastTimer: null,
 
@@ -201,9 +207,32 @@ export const useStore = create<AppState>((set, get) => ({
     set({ open: id });
   },
 
+  // ── Persistence ──
+  async hydrate() {
+    if (get().hydrated) return;
+    try {
+      const [br, lr] = await Promise.all([fetch("/api/books"), fetch("/api/lists")]);
+      const [booksData, listsData] = await Promise.all([br.json(), lr.json()]);
+      set({ books: booksData, lists: listsData, hydrated: true });
+    } catch {
+      set({ hydrated: true });
+    }
+  },
+
   // ── Library ──
   patchBook(id, fn) {
-    set((s) => ({ books: s.books.map((b) => (b.id === id ? fn(b) : b)) }));
+    set((s) => {
+      const updated = s.books.map((b) => (b.id === id ? fn(b) : b));
+      const book = updated.find((b) => b.id === id);
+      if (book) {
+        fetch(`/api/books/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(book),
+        }).catch(() => {});
+      }
+      return { books: updated };
+    });
   },
 
   addPlatform(bookId, raw) {
@@ -302,6 +331,11 @@ export const useStore = create<AppState>((set, get) => ({
       bg, ink, platforms: [{ name: "Kobo", langs: "FR, EN" }],
     };
     set((s) => ({ books: [...s.books, nb], added: [...s.added, r.key], open: nb.id }));
+    fetch("/api/books", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(nb),
+    }).catch(() => {});
     get().ping(`« ${r.title} » est dans ta PAL. Ajoute le piment et les tropes 🌶`);
   },
 
@@ -311,10 +345,13 @@ export const useStore = create<AppState>((set, get) => ({
   addList() {
     const name = get().newList.trim();
     if (!name) return;
-    set((s) => ({
-      lists: [...s.lists, { name, dot: "#96A1BE", desc: "" }],
-      newList: "",
-    }));
+    const entry = { name, dot: "#96A1BE", desc: "" };
+    set((s) => ({ lists: [...s.lists, entry], newList: "" }));
+    fetch("/api/lists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+    }).catch(() => {});
   },
 
   // ── Messages ──

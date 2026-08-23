@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { useStore } from "@/store";
 import type { Screen } from "@/types";
 import Sidebar from "./Sidebar";
@@ -15,7 +16,8 @@ import InstallBanner from "./InstallBanner";
 import StarField from "./StarField";
 
 export default function AppShell() {
-  const { theme, screen, open, toast } = useStore();
+  const { theme, screen, open, toast, hydrate } = useStore();
+  useEffect(() => { hydrate(); }, [hydrate]);
 
   return (
     <div data-theme={theme} style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
