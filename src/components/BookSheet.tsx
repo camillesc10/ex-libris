@@ -116,39 +116,29 @@ function BookSheetContent({ book }: { book: Book }) {
   async function fetchBookInfo() {
     setFetchingInfo(true);
     try {
-      const q = encodeURIComponent(`${book.title} ${book.author}`);
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=5&printType=books&q=${q}`);
+      const q = `${book.title} ${book.author}`;
+      const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
       const j = await res.json();
-      const items: Record<string, unknown>[] = j.items || [];
+      const items: { cover: string | null; pages: number; snippet: string; year: string; lang: string; isbn: string | null }[] = j.items || [];
       if (!items.length) { ping("Aucun résultat trouvé sur Google Books."); return; }
 
-      // Pick the first result that has a cover image, else fall back to the first result
-      let best = items[0];
-      for (const it of items) {
-        const il = ((it.volumeInfo as Record<string, unknown>)?.imageLinks as Record<string, string>) || {};
-        if (il.medium || il.thumbnail || il.smallThumbnail) { best = it; break; }
-      }
+      // Pick the first result that has a cover, else fall back to the first
+      const best = items.find((it) => it.cover) ?? items[0];
 
-      const v = (best.volumeInfo as Record<string, unknown>) || {};
-      const il = (v.imageLinks as Record<string, string>) || {};
-      let coverUrl = (il.medium ?? il.thumbnail ?? il.smallThumbnail ?? "")
-        .replace("http://", "https://")
-        .replace("&edge=curl", "");
+      let coverUrl = best.cover ?? "";
 
       // Fallback: Open Library cover via ISBN
-      if (!coverUrl) {
-        const ids = (v.industryIdentifiers as { type: string; identifier: string }[]) || [];
-        const isbn = ids.find((i) => i.type === "ISBN_13")?.identifier || ids.find((i) => i.type === "ISBN_10")?.identifier;
-        if (isbn) coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+      if (!coverUrl && best.isbn) {
+        coverUrl = `https://covers.openlibrary.org/b/isbn/${best.isbn}-L.jpg`;
       }
 
       patch((b) => ({
         ...b,
         ...(coverUrl ? { coverUrl } : {}),
-        ...(v.pageCount && !b.pages ? { pages: v.pageCount as number } : {}),
-        ...(v.description && !b.resume ? { resume: (v.description as string).slice(0, 400) + "…" } : {}),
-        ...(v.publishedDate && !b.year ? { year: (v.publishedDate as string).slice(0, 4) } : {}),
-        ...(v.language && !b.lang ? { lang: (v.language as string).toUpperCase() } : {}),
+        ...(best.pages && !b.pages ? { pages: best.pages } : {}),
+        ...(best.snippet && !b.resume ? { resume: best.snippet.slice(0, 400) + "…" } : {}),
+        ...(best.year && !b.year ? { year: best.year } : {}),
+        ...(best.lang && !b.lang ? { lang: best.lang } : {}),
       }));
       ping(coverUrl ? "Couverture et infos récupérées ✓" : "Infos récupérées (pas de couverture disponible).");
     } catch {
