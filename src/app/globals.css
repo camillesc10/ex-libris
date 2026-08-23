@@ -97,6 +97,25 @@ a:hover {
   }
 }
 
+@keyframes burst-fly {
+  0%   { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4); }
+}
+
+.burst-star {
+  position: absolute;
+  top: 50%; left: 50%;
+  color: var(--accent);
+  font-size: 13px;
+  animation: burst-fly 0.8s ease-out forwards;
+}
+.burst-0 { --dx: -30px; --dy: -28px; animation-delay: 0ms; }
+.burst-1 { --dx: 30px;  --dy: -28px; animation-delay: 40ms; }
+.burst-2 { --dx: -42px; --dy: 10px;  animation-delay: 20ms; }
+.burst-3 { --dx: 42px;  --dy: 10px;  animation-delay: 60ms; }
+.burst-4 { --dx: -18px; --dy: 36px;  animation-delay: 10ms; }
+.burst-5 { --dx: 18px;  --dy: 36px;  animation-delay: 50ms; }
+
 .animate-up {
   animation: up 0.22s ease;
 }

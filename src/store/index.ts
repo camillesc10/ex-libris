@@ -4,6 +4,19 @@ import type {
   Theme, Layout, Flow, Screen,
   Book, BookList, Conversation, SealedNote, Reader, SearchResult,
 } from "@/types";
+
+function parseCSVRow(row: string): string[] {
+  const result: string[] = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < row.length; i++) {
+    const c = row[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === "," && !inQ) { result.push(cur); cur = ""; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
 import {
   SEED_BOOKS, SEED_LISTS, SEED_CONVOS, SEED_NOTES, SEED_READERS,
   COVER_PALETTE,
@@ -36,6 +49,8 @@ interface AppState {
   // Filters
   genre: string;
   maxSpice: number;
+  librarySearch: string;
+  tropeFilter: string | null;
 
   // Search
   query: string;
@@ -89,6 +104,9 @@ interface AppState {
 
   setGenre: (g: string) => void;
   setMaxSpice: (n: number) => void;
+  setLibrarySearch: (q: string) => void;
+  setTropeFilter: (t: string | null) => void;
+  importGoodreads: (csv: string) => void;
 
   setQuery: (q: string) => void;
   runSearch: () => Promise<void>;
@@ -136,6 +154,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   genre: "Tous",
   maxSpice: 5,
+  librarySearch: "",
+  tropeFilter: null,
 
   query: "",
   results: [],
@@ -247,25 +267,88 @@ export const useStore = create<AppState>((set, get) => ({
   updatePage(bookId, page) {
     get().patchBook(bookId, (b) => {
       const lists = [...b.lists];
-      // Moving to En cours removes from PAL
+      const today = new Date().toISOString().slice(0, 10);
+      let { startedAt, finishedAt } = b;
       if (!lists.includes("En cours")) {
         const palIdx = lists.indexOf("PAL");
         if (palIdx !== -1) lists.splice(palIdx, 1);
         lists.push("En cours");
+        if (!startedAt) startedAt = today;
       }
-      // Reaching last page marks as Déjà lu
       if (page >= b.pages && b.pages > 0) {
         const coursIdx = lists.indexOf("En cours");
         if (coursIdx !== -1) lists.splice(coursIdx, 1);
         if (!lists.includes("Déjà lu")) lists.push("Déjà lu");
+        if (!finishedAt) finishedAt = today;
       }
-      return { ...b, page, lists };
+      return { ...b, page, lists, startedAt, finishedAt };
     });
   },
 
   // ── Filters ──
   setGenre: (g) => set({ genre: g }),
   setMaxSpice: (n) => set((s) => ({ maxSpice: s.maxSpice === n ? 5 : n })),
+  setLibrarySearch: (q) => set({ librarySearch: q }),
+  setTropeFilter: (t) => set((s) => ({ tropeFilter: s.tropeFilter === t ? null : t })),
+
+  importGoodreads(csv) {
+    const lines = csv.split("\n").filter(Boolean);
+    if (lines.length < 2) return;
+    const header = parseCSVRow(lines[0]);
+    const col = (name: string) => header.indexOf(name);
+    const iTitle = col("Title"), iAuthor = col("Author"), iPages = col("Number of Pages");
+    const iRating = col("My Rating"), iShelf = col("Exclusive Shelf");
+    const iDateRead = col("Date Read"), iYear = col("Original Publication Year");
+    const iISBN = col("ISBN13");
+    const existing = get().books;
+    let idx = existing.length;
+    const newBooks: Book[] = [];
+    for (const line of lines.slice(1)) {
+      const cols = parseCSVRow(line);
+      const title = cols[iTitle]?.trim();
+      if (!title) continue;
+      if (existing.some((b) => b.title.toLowerCase() === title.toLowerCase())) continue;
+      const shelf = cols[iShelf]?.trim() || "to-read";
+      const listMap: Record<string, string> = { read: "Déjà lu", reading: "En cours", "to-read": "PAL" };
+      const lists = [listMap[shelf] || "PAL"];
+      const dateRead = cols[iDateRead]?.trim();
+      // Parse series from title like "Title (Series, #N)"
+      let cleanTitle = title;
+      let series: string | undefined;
+      let seriesNum: number | undefined;
+      const seriesMatch = title.match(/^(.*?)\s*\(([^,]+),\s*#(\d+)\)$/);
+      if (seriesMatch) {
+        cleanTitle = seriesMatch[1].trim();
+        series = seriesMatch[2].trim();
+        seriesNum = parseInt(seriesMatch[3], 10);
+      }
+      const [bg, ink] = COVER_PALETTE[idx % COVER_PALETTE.length];
+      const book: Book = {
+        id: `gr${idx}`,
+        title: cleanTitle,
+        author: cols[iAuthor]?.trim() || "Auteur inconnu",
+        year: cols[iYear]?.trim() || "",
+        genre: "Roman", lang: "FR",
+        spice: 0,
+        rating: Math.min(5, parseInt(cols[iRating] || "0", 10) || 0),
+        pages: parseInt(cols[iPages] || "0", 10) || 0,
+        page: 0,
+        tropes: [], lists, resume: "", comment: "",
+        bg, ink,
+        platforms: cols[iISBN]?.trim() ? [{ name: "ISBN", langs: cols[iISBN].replace(/["=]/g, "").trim() }] : [],
+        finishedAt: dateRead || undefined,
+        series, seriesNum,
+      };
+      newBooks.push(book);
+      idx++;
+    }
+    if (!newBooks.length) { get().ping("Aucun nouveau livre trouvé dans ce fichier."); return; }
+    set((s) => ({ books: [...s.books, ...newBooks] }));
+    newBooks.forEach((b) => {
+      fetch("/api/books", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).catch(() => {});
+    });
+    get().ping(`${newBooks.length} livre(s) importé(s) depuis Goodreads 📚`);
+  },
 
   // ── Search ──
   setQuery: (q) => set({ query: q }),

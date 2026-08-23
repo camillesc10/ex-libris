@@ -1,25 +1,51 @@
 "use client";
+import { useState } from "react";
 import { useStore } from "@/store";
-import type { SearchResult } from "@/types";
 import { COVER_PALETTE } from "@/store/data";
+import GoodreadsImport from "../GoodreadsImport";
+import IsbnScanner from "../IsbnScanner";
 
 export default function SearchScreen() {
-  const { results, searching, source, added, addFromApi, books } = useStore();
+  const { results, searching, source, added, addFromApi, runSearch, setQuery, query } = useStore();
+  const [scanOpen, setScanOpen] = useState(false);
+
+  async function handleIsbnFound(isbn: string) {
+    setScanOpen(false);
+    setQuery(isbn);
+    await runSearch();
+  }
 
   const statusText = searching
     ? "Recherche en cours…"
     : results.length
     ? `${results.length} résultats — clique pour ajouter et compléter la fiche`
-    : "Saisis un titre ou un auteur dans la barre de recherche.";
+    : "Saisis un titre, un auteur ou un ISBN dans la barre de recherche.";
 
   return (
     <div style={{ padding: "30px 38px", maxWidth: 1100 }} className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]">
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22, fontSize: 13, color: "var(--muted)" }}>
-        <span style={{ padding: "5px 11px", borderRadius: 999, background: "var(--surface2)" }}>
-          {source || "Google Books"}
-        </span>
-        <span>{statusText}</span>
+      {/* ISBN scan button */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+        <button
+          onClick={() => setScanOpen(true)}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "9px 16px", borderRadius: 11, fontSize: 13, fontWeight: 600,
+            background: "var(--soft)", color: "var(--accent)",
+            border: "1px solid var(--line)",
+          }}
+        >
+          <span style={{ fontSize: 16 }}>📷</span> Scanner un ISBN
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--muted)" }}>
+          <span style={{ padding: "5px 11px", borderRadius: 999, background: "var(--surface2)" }}>
+            {source || "Google Books"}
+          </span>
+          <span>{statusText}</span>
+        </div>
       </div>
+
+      {/* Goodreads import */}
+      <GoodreadsImport />
 
       {searching && (
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
@@ -85,6 +111,8 @@ export default function SearchScreen() {
           );
         })}
       </div>
+
+      {scanOpen && <IsbnScanner onFound={handleIsbnFound} onClose={() => setScanOpen(false)} />}
     </div>
   );
 }

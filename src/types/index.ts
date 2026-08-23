@@ -26,6 +26,10 @@ export interface Book {
   bg: string;
   ink: string;
   platforms: Platform[];
+  startedAt?: string;  // ISO date string — date de début de lecture
+  finishedAt?: string; // ISO date string — date de fin de lecture
+  series?: string;     // nom de la saga
+  seriesNum?: number;  // numéro du tome
 }
 
 export interface BookList {
@@ -71,4 +75,5 @@ export interface SearchResult {
   cover: string;
   pages: number;
   lang: string;
+  isbn?: string;
 }

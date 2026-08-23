@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Karla } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -46,7 +47,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }

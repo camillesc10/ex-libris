@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useStore } from "@/store";
 import { COVER_PALETTE } from "@/store/data";
 import StarField from "./StarField";
@@ -12,9 +14,12 @@ const HERO_COVERS = [
 ];
 
 export default function AuthPage() {
-  const { mode, form, authError, setFormField, submitAuth, toggleAuth } = useStore();
-  const isSignup = mode === "signup";
+  const { mode, form, setFormField, toggleAuth } = useStore();
+  const setAuth = useStore((s) => s.submitAuth);
+  const [authError, setAuthError] = useState("");
+  const [loading, setLoading] = useState(false);
 
+  const isSignup = mode === "signup";
   const kicker = isSignup ? "Nouvelle étagère" : "Bon retour";
   const title = isSignup ? "Crée ta bibliothèque" : "Retrouve tes livres";
   const sub = isSignup
@@ -22,6 +27,35 @@ export default function AuthPage() {
     : "Là où tu t'étais arrêtée, avec les notes de tes ami·es.";
   const cta = isSignup ? "Créer mon compte" : "Se connecter";
   const switchLabel = isSignup ? "Déjà un compte ? Se connecter" : "Pas encore de compte ? En créer un";
+
+  async function handleSubmit() {
+    setAuthError("");
+    if (!/.+@.+\..+/.test(form.email)) { setAuthError("Il manque un e-mail valide."); return; }
+    if (form.pass.length < 4) { setAuthError("Mot de passe : 4 caractères minimum."); return; }
+    setLoading(true);
+    try {
+      if (isSignup) {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, name: form.name, password: form.pass }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setAuthError(data.error || "Erreur lors de la création du compte."); setLoading(false); return; }
+      }
+      const result = await signIn("credentials", { email: form.email, password: form.pass, redirect: false });
+      if (result?.error) {
+        setAuthError("E-mail ou mot de passe incorrect.");
+        setLoading(false);
+        return;
+      }
+      // Sync with Zustand store (keeps existing app logic intact)
+      setAuth();
+    } catch {
+      setAuthError("Erreur réseau, réessaie.");
+      setLoading(false);
+    }
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
@@ -46,16 +80,12 @@ export default function AuthPage() {
         <div
           className="hidden md:flex"
           style={{
-            position: "relative",
-            overflow: "hidden",
-            borderRight: "1px solid var(--line)",
-            padding: "56px 60px",
-            flexDirection: "column",
-            justifyContent: "space-between",
+            position: "relative", overflow: "hidden",
+            borderRight: "1px solid var(--line)", padding: "56px 60px",
+            flexDirection: "column", justifyContent: "space-between",
             background: "rgba(0,0,0,.16)",
           }}
         >
-          {/* Golden halo */}
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
             background: "radial-gradient(900px 420px at 78% -10%, rgba(224,184,74,.14), transparent 72%)",
@@ -72,11 +102,7 @@ export default function AuthPage() {
           </div>
 
           <div style={{ maxWidth: 430, position: "relative" }}>
-            <p style={{
-              fontFamily: "var(--font-cinzel, Cinzel, serif)",
-              fontSize: 36, lineHeight: 1.24, letterSpacing: ".02em",
-              margin: "0 0 18px", textWrap: "pretty",
-            }}>
+            <p style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 36, lineHeight: 1.24, letterSpacing: ".02em", margin: "0 0 18px", textWrap: "pretty" }}>
               Ta bibliothèque, tes pépites, et les ami·es qui lisent avec toi.
             </p>
             <p style={{ fontSize: 15, lineHeight: 1.65, color: "var(--muted)", margin: 0, maxWidth: 380, textWrap: "pretty" }}>
@@ -90,20 +116,15 @@ export default function AuthPage() {
                 key={c.title}
                 style={{
                   width: 96, borderRadius: "4px 12px 12px 4px",
-                  padding: "14px 12px", display: "flex", flexDirection: "column",
-                  justifyContent: "space-between",
+                  padding: "14px 12px", display: "flex", flexDirection: "column", justifyContent: "space-between",
                   boxShadow: "0 18px 30px -16px #000",
                   background: c.bg, color: c.ink, height: c.h,
                   borderLeft: "4px solid rgba(224,184,74,.7)",
                   outline: "1px solid rgba(224,184,74,.32)", outlineOffset: -6,
                 }}
               >
-                <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 13, lineHeight: 1.2 }}>
-                  {c.title}
-                </div>
-                <div style={{ fontSize: 8, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.7 }}>
-                  {c.author}
-                </div>
+                <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 13, lineHeight: 1.2 }}>{c.title}</div>
+                <div style={{ fontSize: 8, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.7 }}>{c.author}</div>
               </div>
             ))}
           </div>
@@ -118,10 +139,7 @@ export default function AuthPage() {
             <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 14 }}>
               {kicker}
             </div>
-            <h1 style={{
-              fontFamily: "var(--font-cinzel, Cinzel, serif)",
-              fontWeight: 400, fontSize: 29, letterSpacing: ".04em", margin: "0 0 8px",
-            }}>
+            <h1 style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontWeight: 400, fontSize: 29, letterSpacing: ".04em", margin: "0 0 8px" }}>
               {title}
             </h1>
             <p style={{ fontSize: 14, color: "var(--muted)", margin: "0 0 30px" }}>{sub}</p>
@@ -129,23 +147,13 @@ export default function AuthPage() {
             {isSignup && (
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Pseudo</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => setFormField("name", e.target.value)}
-                  placeholder="lila.lit"
-                  style={inputStyle}
-                />
+                <input value={form.name} onChange={(e) => setFormField("name", e.target.value)} placeholder="lila.lit" style={inputStyle} />
               </div>
             )}
 
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>E-mail</label>
-              <input
-                value={form.email}
-                onChange={(e) => setFormField("email", e.target.value)}
-                placeholder="toi@exemple.fr"
-                style={inputStyle}
-              />
+              <input value={form.email} onChange={(e) => setFormField("email", e.target.value)} placeholder="toi@exemple.fr" style={inputStyle} />
             </div>
 
             <div style={{ marginBottom: 10 }}>
@@ -155,34 +163,30 @@ export default function AuthPage() {
                 value={form.pass}
                 onChange={(e) => setFormField("pass", e.target.value)}
                 placeholder="••••••••"
-                onKeyDown={(e) => e.key === "Enter" && submitAuth()}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 style={inputStyle}
               />
             </div>
 
-            {authError && (
-              <div style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12 }}>{authError}</div>
-            )}
+            {authError && <div style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12 }}>{authError}</div>}
 
             <button
-              onClick={submitAuth}
+              onClick={handleSubmit}
+              disabled={loading}
               style={{
                 width: "100%", marginTop: 12, padding: 14, borderRadius: 10,
                 background: "var(--accent)", color: "#161C2F",
                 fontFamily: "var(--font-cinzel, Cinzel, serif)",
                 fontSize: 14, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase",
+                opacity: loading ? 0.7 : 1,
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.07)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = ""; }}
             >
-              {cta}
+              {loading ? "…" : cta}
             </button>
 
             <button
               onClick={toggleAuth}
               style={{ width: "100%", marginTop: 14, fontSize: 13.5, color: "var(--muted)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--ink)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--muted)"; }}
             >
               {switchLabel}
             </button>

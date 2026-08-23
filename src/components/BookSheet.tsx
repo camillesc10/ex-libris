@@ -20,6 +20,7 @@ function BookSheetContent({ book }: { book: Book }) {
 
   const [tropeDraft, setTropeDraft] = useState("");
   const [platformDraft, setPlatformDraft] = useState("");
+  const [burst, setBurst] = useState(false);
 
   const patch = (fn: (b: Book) => Book) => patchBook(book.id, fn);
 
@@ -30,7 +31,9 @@ function BookSheetContent({ book }: { book: Book }) {
     patch((b) => ({ ...b, spice: b.spice === n ? 0 : n }));
   }
   function setRating(n: number) {
-    patch((b) => ({ ...b, rating: b.rating === n ? 0 : n }));
+    const next = book.rating === n ? 0 : n;
+    patch((b) => ({ ...b, rating: next }));
+    if (next === 5) { setBurst(true); setTimeout(() => setBurst(false), 900); }
   }
   function setGenre(g: string) {
     patch((b) => ({ ...b, genre: g }));
@@ -264,7 +267,7 @@ function BookSheetContent({ book }: { book: Book }) {
                   </div>
                 </div>
 
-                <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
+                <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, position: "relative", overflow: "hidden" }}>
                   <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 12 }}>
                     Ma note
                   </div>
@@ -286,6 +289,13 @@ function BookSheetContent({ book }: { book: Book }) {
                   <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 11 }}>
                     {RATING_LABELS[book.rating]}
                   </div>
+                  {burst && (
+                    <div className="star-burst" aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+                      {["✦","✦","✦","✦","✦","✦"].map((s, i) => (
+                        <span key={i} className={`burst-star burst-${i}`}>{s}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -395,6 +405,46 @@ function BookSheetContent({ book }: { book: Book }) {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Series + dates */}
+              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
+                <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 14 }}>Saga & dates</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, marginBottom: 12 }}>
+                  <input
+                    value={book.series || ""}
+                    onChange={(e) => patch((b) => ({ ...b, series: e.target.value || undefined }))}
+                    placeholder="Nom de la saga (ex. ACOTAR)"
+                    style={{ padding: "9px 11px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 13, outline: "none" }}
+                  />
+                  <input
+                    type="number"
+                    value={book.seriesNum ?? ""}
+                    onChange={(e) => patch((b) => ({ ...b, seriesNum: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
+                    placeholder="Tome"
+                    style={{ width: 72, padding: "9px 11px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 13, outline: "none" }}
+                  />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Commencé le</div>
+                    <input
+                      type="date"
+                      value={book.startedAt || ""}
+                      onChange={(e) => patch((b) => ({ ...b, startedAt: e.target.value || undefined }))}
+                      style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 12.5, outline: "none", colorScheme: "dark" }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Terminé le</div>
+                    <input
+                      type="date"
+                      value={book.finishedAt || ""}
+                      onChange={(e) => patch((b) => ({ ...b, finishedAt: e.target.value || undefined }))}
+                      style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 12.5, outline: "none", colorScheme: "dark" }}
+                    />
+                  </div>
                 </div>
               </div>
 
