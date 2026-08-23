@@ -30,6 +30,8 @@ export default function Sidebar() {
     { key: "timeline" as const, label: "Chronologie", count: "" },
     { key: "messages" as const, label: "Messages", count: 3 },
     { key: "sync" as const, label: "Lecture partagée", count: 2 },
+    { key: "club" as const, label: "Club de lecture", count: "" },
+    { key: "compare" as const, label: "Comparer", count: "" },
   ];
 
   return (

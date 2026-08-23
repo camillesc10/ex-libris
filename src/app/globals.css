@@ -140,3 +140,16 @@ a:hover {
     overscroll-behavior-y: none;
   }
 }
+
+@keyframes confettiFall {
+  0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(600px) rotate(720deg); }
+}
+
+/* iPhone 15 safe area improvements */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .bottom-nav-safe {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+

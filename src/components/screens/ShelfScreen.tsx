@@ -12,6 +12,7 @@ const SHELF_ORDER = [
   { key: "En pause", label: "En pause", meta: "interrompus, mais pas abandonnés" },
   { key: "À relire", label: "À relire", meta: "trop bons pour une seule lecture" },
   { key: "Abandonné", label: "Abandonné", meta: "la vie est trop courte" },
+  { key: "Liste de souhaits", label: "Liste de souhaits", meta: "à acheter" },
 ];
 
 const SORT_OPTIONS: { value: "default" | "rating" | "pages" | "date" | "alpha"; label: string }[] = [
@@ -49,6 +50,10 @@ export default function ShelfScreen() {
 
   const [showAdv, setShowAdv] = useState(false);
   const [palPage, setPalPage] = useState(0);
+  const [palSwipeIdx, setPalSwipeIdx] = useState(0);
+  const [palSwipeMode, setPalSwipeMode] = useState(false);
+  const [showUnrated, setShowUnrated] = useState(false);
+  const [parallelTab, setParallelTab] = useState(0);
   const [dragOrder, setDragOrder] = useState<Record<string, string[]>>({});
   const dragSrc = useRef<string | null>(null);
 
@@ -65,6 +70,7 @@ export default function ShelfScreen() {
         !b.tropes.some((t) => t.toLowerCase().includes(q))
       ) return false;
     }
+    if (showUnrated && b.rating > 0) return false;
     if (advFilters.minRating > 0 && b.rating < advFilters.minRating) return false;
     if (advFilters.minPages > 0 && (b.pages || 0) < advFilters.minPages) return false;
     if (advFilters.maxPages < 9999 && (b.pages || 0) > advFilters.maxPages) return false;
@@ -300,9 +306,25 @@ export default function ShelfScreen() {
         </div>
       )}
 
-      {/* PAL wave size (#53) */}
+      {/* Unrated filter chip (#101) */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        <button
+          onClick={() => setShowUnrated((v) => !v)}
+          style={{
+            padding: "5px 13px", borderRadius: 999, fontSize: 12,
+            border: `1px solid ${showUnrated ? "var(--accent)" : "var(--line)"}`,
+            background: showUnrated ? "var(--soft)" : "transparent",
+            color: showUnrated ? "var(--accent)" : "var(--muted)",
+            transition: "all .12s",
+          }}
+        >
+          Sans note uniquement
+        </button>
+      </div>
+
+      {/* PAL wave size (#53) + swipe mode (#74) */}
       {!listFilter && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22, fontSize: 13, color: "var(--muted)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22, fontSize: 13, color: "var(--muted)", flexWrap: "wrap" }}>
           <span>Vague PAL&nbsp;:</span>
           {[0, 5, 10, 20].map((n) => (
             <button
@@ -318,6 +340,18 @@ export default function ShelfScreen() {
               {n === 0 ? "Tout" : n}
             </button>
           ))}
+          <button
+            onClick={() => { setPalSwipeMode((v) => !v); setPalSwipeIdx(0); }}
+            style={{
+              marginLeft: 8, padding: "5px 13px", borderRadius: 999, fontSize: 12,
+              border: `1px solid ${palSwipeMode ? "var(--accent)" : "var(--line)"}`,
+              background: palSwipeMode ? "var(--soft)" : "transparent",
+              color: palSwipeMode ? "var(--accent)" : "var(--muted)",
+              transition: "all .12s",
+            }}
+          >
+            {palSwipeMode ? "◀ Mode vague" : "Mode carte à carte"}
+          </button>
         </div>
       )}
 
@@ -329,17 +363,30 @@ export default function ShelfScreen() {
 
       {shelves.map((row) => {
         const isPAL = row.key === "PAL";
+        const isEnCours = row.key === "En cours";
         let displayBooks = getOrderedBooks(row.key, row.books);
+
+        // Parallel reading tabs (#75) — "En cours" with multiple books
+        const parallelBooks = isEnCours ? displayBooks : [];
+        if (isEnCours && parallelBooks.length > 1) {
+          const safeTab = Math.min(parallelTab, parallelBooks.length - 1);
+          displayBooks = [parallelBooks[safeTab]];
+        }
 
         // PAL wave pagination (#53)
         const totalPAL = displayBooks.length;
         let palStart = 0;
         let palEnd = totalPAL;
-        if (isPAL && waveSize > 0) {
+        if (isPAL && waveSize > 0 && !palSwipeMode) {
           palStart = palPage * waveSize;
           palEnd = Math.min(palStart + waveSize, totalPAL);
           displayBooks = displayBooks.slice(palStart, palEnd);
         }
+
+        // PAL swipe mode (#74)
+        const allPalBooks = isPAL ? getOrderedBooks(row.key, row.books) : [];
+        const safeSwipeIdx = Math.min(palSwipeIdx, allPalBooks.length - 1);
+        const swipeBook = isPAL && palSwipeMode && allPalBooks.length > 0 ? allPalBooks[safeSwipeIdx] : null;
 
         const groups = groupBySeries(displayBooks);
         const bookIds = getOrderedBooks(row.key, row.books).map((b) => b.id);
@@ -351,10 +398,31 @@ export default function ShelfScreen() {
                 {row.label}
               </h2>
               <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{row.meta}</span>
-              {isPAL && waveSize > 0 && (
+              {isPAL && waveSize > 0 && !palSwipeMode && (
                 <span style={{ fontSize: 12, color: "var(--muted)" }}>
                   {palStart + 1}–{palEnd} / {totalPAL}
                 </span>
+              )}
+              {/* Parallel reading tabs (#75) */}
+              {isEnCours && parallelBooks.length > 1 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {parallelBooks.map((b, i) => (
+                    <button
+                      key={b.id}
+                      onClick={() => setParallelTab(i)}
+                      style={{
+                        padding: "5px 12px", borderRadius: 999, fontSize: 12, minHeight: 30,
+                        border: `1px solid ${parallelTab === i ? "var(--accent)" : "var(--line)"}`,
+                        background: parallelTab === i ? "var(--soft)" : "transparent",
+                        color: parallelTab === i ? "var(--accent)" : "var(--muted)",
+                        maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        transition: "all .12s",
+                      }}
+                    >
+                      {b.title}
+                    </button>
+                  ))}
+                </div>
               )}
               {/* Shelf color swatches (#52) */}
               <div style={{ marginLeft: "auto", display: "flex", gap: 5, alignItems: "center" }}>
@@ -383,7 +451,63 @@ export default function ShelfScreen() {
                 )}
               </div>
             </div>
-            <div
+            {/* PAL swipe card (#74) */}
+            {isPAL && palSwipeMode && swipeBook && (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 22,
+                  padding: "28px 24px",
+                  border: "1px solid var(--line)", borderRadius: 20, background: "var(--surface)",
+                }}>
+                  <button
+                    onClick={() => setPalSwipeIdx((i) => Math.max(0, i - 1))}
+                    disabled={safeSwipeIdx === 0}
+                    aria-label="Précédent"
+                    style={{
+                      width: 44, height: 44, borderRadius: 12, fontSize: 18,
+                      border: "1px solid var(--line)", background: "var(--surface2)",
+                      color: safeSwipeIdx === 0 ? "var(--muted)" : "var(--ink)",
+                      flexShrink: 0,
+                    }}
+                  >←</button>
+                  <div style={{ textAlign: "center", maxWidth: 220 }}>
+                    <div style={{
+                      width: 132, height: 196, borderRadius: "4px 14px 14px 4px", margin: "0 auto 14px",
+                      background: swipeBook.bg, color: swipeBook.ink,
+                      borderLeft: "5px solid rgba(224,184,74,.7)",
+                      outline: "1px solid rgba(224,184,74,.28)", outlineOffset: -6,
+                      boxShadow: "0 24px 36px -18px #000",
+                      padding: "18px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between",
+                      fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 15, lineHeight: 1.2,
+                      cursor: "pointer", transition: "transform .2s",
+                    }}
+                    onClick={() => openBook(swipeBook.id)}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
+                    >
+                      <span>{swipeBook.title}</span>
+                      <span style={{ fontSize: 9, letterSpacing: ".14em", textTransform: "uppercase", opacity: .72 }}>{swipeBook.author}</span>
+                    </div>
+                    <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 14, marginBottom: 4 }}>{swipeBook.title}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>{swipeBook.author}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)" }}>{safeSwipeIdx + 1} / {allPalBooks.length}</div>
+                  </div>
+                  <button
+                    onClick={() => setPalSwipeIdx((i) => Math.min(allPalBooks.length - 1, i + 1))}
+                    disabled={safeSwipeIdx >= allPalBooks.length - 1}
+                    aria-label="Suivant"
+                    style={{
+                      width: 44, height: 44, borderRadius: 12, fontSize: 18,
+                      border: "1px solid var(--line)", background: "var(--surface2)",
+                      color: safeSwipeIdx >= allPalBooks.length - 1 ? "var(--muted)" : "var(--ink)",
+                      flexShrink: 0,
+                    }}
+                  >→</button>
+                </div>
+              </div>
+            )}
+
+            {(!isPAL || !palSwipeMode) && <div
               style={{
                 display: "flex", gap: 22, alignItems: "flex-end",
                 overflowX: "auto", paddingBottom: 16,
@@ -427,13 +551,31 @@ export default function ShelfScreen() {
                     onDragStart={() => onDragStart(g.books[0].id)}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => onDrop(row.key, g.books[0].id, bookIds)}
-                    style={{ cursor: "grab", flexShrink: 0 }}
+                    style={{ cursor: "grab", flexShrink: 0, position: "relative" }}
                   >
                     <BookCover book={g.books[0]} onClick={() => openBook(g.books[0].id)} />
+                    {row.key === "Liste de souhaits" && (
+                      <a
+                        href={`https://www.fnac.com/SearchResult/ResultList.aspx?Search=${encodeURIComponent(`${g.books[0].title} ${g.books[0].author}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          position: "absolute", bottom: 28, left: 0, right: 0,
+                          textAlign: "center", fontSize: 10, fontWeight: 700,
+                          background: "#E2A900", color: "#1A1200",
+                          padding: "3px 0", textDecoration: "none",
+                          borderRadius: "0 0 4px 0",
+                          letterSpacing: ".04em",
+                        }}
+                      >
+                        Fnac
+                      </a>
+                    )}
                   </div>
                 )
               ))}
-            </div>
+            </div>}
 
             {/* PAL pagination controls */}
             {isPAL && waveSize > 0 && totalPAL > waveSize && (

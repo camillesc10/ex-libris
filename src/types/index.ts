@@ -1,7 +1,7 @@
 export type Theme = "constelle" | "velin";
 export type Layout = "colonnes" | "immersif";
 export type Flow = "fil" | "jalons";
-export type Screen = "shelf" | "search" | "lists" | "messages" | "sync" | "authors" | "journal" | "timeline";
+export type Screen = "shelf" | "search" | "lists" | "messages" | "sync" | "authors" | "journal" | "timeline" | "club" | "compare";
 
 export interface Platform {
   name: string;
