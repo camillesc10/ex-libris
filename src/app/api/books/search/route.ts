@@ -13,49 +13,101 @@ export type GoogleBookResult = {
   isbn: string | null;
 };
 
+type OLDoc = {
+  key?: string;
+  title?: string;
+  author_name?: string[];
+  first_publish_year?: number;
+  cover_i?: number;
+  number_of_pages_median?: number;
+  language?: string[];
+  isbn?: string[];
+};
+
+function mapGoogleBooks(items: unknown[]): GoogleBookResult[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (items as any[]).map((item) => {
+    const info = item.volumeInfo ?? {};
+    const images = info.imageLinks ?? {};
+    const cover =
+      (images.medium ?? images.thumbnail ?? images.smallThumbnail ?? null)
+        ?.replace("http://", "https://")
+        ?.replace("&edge=curl", "") ?? null;
+
+    const ids: { type: string; identifier: string }[] = info.industryIdentifiers ?? [];
+    const isbn =
+      ids.find((i) => i.type === "ISBN_13")?.identifier ??
+      ids.find((i) => i.type === "ISBN_10")?.identifier ??
+      null;
+
+    return {
+      id: item.id,
+      title: info.title ?? "",
+      author: (info.authors ?? []).join(", "),
+      pages: info.pageCount ?? 0,
+      cover,
+      publisher: info.publisher ?? "",
+      year: info.publishedDate?.slice(0, 4) ?? "",
+      lang: (info.language ?? "fr").toUpperCase(),
+      snippet: (info.description ?? "").slice(0, 200),
+      isbn,
+    };
+  });
+}
+
+function mapOpenLibrary(docs: OLDoc[]): GoogleBookResult[] {
+  return docs.map((d, i) => {
+    const isbn = d.isbn?.[0] ?? null;
+    const cover = d.cover_i
+      ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`
+      : isbn
+      ? `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`
+      : null;
+    const rawLang = (d.language ?? [])[0] ?? "fre";
+    const lang = rawLang.slice(0, 2).toUpperCase();
+    return {
+      id: d.key ?? `ol${i}`,
+      title: d.title ?? "",
+      author: (d.author_name ?? []).join(", "),
+      pages: d.number_of_pages_median ?? 0,
+      cover,
+      publisher: "",
+      year: d.first_publish_year ? String(d.first_publish_year) : "",
+      lang,
+      snippet: "",
+      isbn,
+    };
+  });
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") ?? "";
   if (!q.trim()) return NextResponse.json({ items: [] });
 
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12&printType=books`;
-
+  // Try Google Books first
   try {
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12&printType=books`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
-    if (!res.ok) throw new Error(`Google Books API error: ${res.status}`);
+    if (res.ok) {
+      const data = await res.json();
+      const items = mapGoogleBooks(data.items ?? []);
+      if (items.length) return NextResponse.json({ items, source: "google" });
+    }
+    // 429 or empty — fall through to Open Library
+  } catch {
+    // network error — fall through
+  }
+
+  // Fallback: Open Library
+  try {
+    const url = `https://openlibrary.org/search.json?limit=12&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) throw new Error(`OL ${res.status}`);
     const data = await res.json();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const items: GoogleBookResult[] = (data.items ?? []).map((item: any) => {
-      const info = item.volumeInfo ?? {};
-      const images = info.imageLinks ?? {};
-      const cover =
-        (images.medium ?? images.thumbnail ?? images.smallThumbnail ?? null)
-          ?.replace("http://", "https://")
-          ?.replace("&edge=curl", "") ?? null;
-
-      const ids: { type: string; identifier: string }[] = info.industryIdentifiers ?? [];
-      const isbn =
-        ids.find((i) => i.type === "ISBN_13")?.identifier ??
-        ids.find((i) => i.type === "ISBN_10")?.identifier ??
-        null;
-
-      return {
-        id: item.id,
-        title: info.title ?? "",
-        author: (info.authors ?? []).join(", "),
-        pages: info.pageCount ?? 0,
-        cover,
-        publisher: info.publisher ?? "",
-        year: info.publishedDate?.slice(0, 4) ?? "",
-        lang: (info.language ?? "fr").toUpperCase(),
-        snippet: (info.description ?? "").slice(0, 200),
-        isbn,
-      };
-    });
-
-    return NextResponse.json({ items });
+    const items = mapOpenLibrary(data.docs ?? []);
+    return NextResponse.json({ items, source: "openlibrary" });
   } catch (e) {
-    console.error("[Google Books]", e);
-    return NextResponse.json({ items: [], error: String(e) }, { status: 500 });
+    console.error("[Books search]", e);
+    return NextResponse.json({ items: [], error: String(e) });
   }
 }

@@ -454,46 +454,26 @@ export const useStore = create<AppState>((set, get) => ({
   async runSearch() {
     const q = get().query.trim();
     if (!q) return;
-    set({ screen: "search", searching: true, results: [], source: "Google Books" });
-    let rs: SearchResult[] = [];
+    set({ screen: "search", searching: true, results: [], source: "" });
     try {
       const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
       const j = await res.json();
-      rs = (j.items || []).map((it: { id: string; title: string; author: string; year: string; snippet: string; cover: string | null; pages: number; lang: string }) => ({
+      const source = j.source === "openlibrary" ? "Open Library" : "Google Books";
+      const rs: SearchResult[] = (j.items || []).map((it: { id: string; title: string; author: string; year: string; snippet: string; cover: string | null; pages: number; lang: string; isbn?: string }) => ({
         key: it.id,
         title: it.title || "Sans titre",
         author: it.author || "Auteur inconnu",
         year: it.year || "—",
-        snippet: it.snippet ? it.snippet.slice(0, 180) + "…" : "Pas de résumé fourni par l'API.",
+        snippet: it.snippet ? it.snippet.slice(0, 180) + "…" : "Fiche Open Library — résumé à compléter.",
         cover: it.cover ?? "",
         pages: it.pages || 320,
         lang: it.lang || "FR",
+        isbn: it.isbn ?? undefined,
       }));
+      set({ results: rs, searching: false, source });
     } catch {
-      rs = [];
+      set({ results: [], searching: false, source: "" });
     }
-    if (!rs.length) {
-      set({ source: "Open Library (fallback)" });
-      try {
-        const res = await fetch(
-          `https://openlibrary.org/search.json?limit=12&q=${encodeURIComponent(q)}`
-        );
-        const j = await res.json();
-        rs = (j.docs || []).map((d: Record<string, unknown>) => ({
-          key: d.key as string,
-          title: d.title as string,
-          author: ((d.author_name as string[]) || ["Auteur inconnu"]).join(", "),
-          year: (d.first_publish_year as string) || "—",
-          snippet: "Fiche Open Library — résumé à compléter à la main.",
-          cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : "",
-          pages: (d.number_of_pages_median as number) || 320,
-          lang: "FR",
-        }));
-      } catch {
-        rs = [];
-      }
-    }
-    set({ results: rs, searching: false });
   },
 
   addFromApi(r) {
