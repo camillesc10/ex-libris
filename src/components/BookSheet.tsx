@@ -167,7 +167,7 @@ function BookSheetContent({ book }: { book: Book }) {
       <button onClick={() => openBook(null)} style={{ flex: 1 }} aria-label="Fermer" />
 
       <div
-        className="animate-slidein max-[820px]:!w-full"
+        className="animate-slidein max-[820px]:!w-full max-[820px]:!max-w-full"
         style={{ width: sheetWidth, maxWidth: "96vw", background: "var(--bg)", height: "100vh", overflowY: "auto", boxShadow: "-24px 0 60px -30px rgba(51,41,31,.5)", position: "relative" }}
       >
         {/* Confetti overlay (#104) */}
@@ -193,15 +193,26 @@ function BookSheetContent({ book }: { book: Book }) {
         {/* Hidden canvas for palette extraction (#107) */}
         <canvas ref={canvasRef} style={{ display: "none" }} />
         {/* Sticky bar */}
-        <div style={{ position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 10, padding: "16px 30px", background: headerBg, backdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)" }}>
-          {(["colonnes", "immersif"] as const).map((l) => {
-            const active = layout === l;
-            return (
-              <button key={l} onClick={() => setLayout(l)} style={{ padding: "6px 13px", borderRadius: 999, fontSize: 12.5, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`, background: active ? "var(--soft)" : "transparent", color: active ? "var(--accent)" : "var(--ink)" }}>
-                {l === "colonnes" ? "Fiche en colonnes" : "Fiche immersive"}
-              </button>
-            );
-          })}
+        <div style={{ position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 10, padding: "16px 20px", background: headerBg, backdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)" }}>
+          {/* ← Back button — mobile only */}
+          <button
+            className="hidden max-[820px]:flex"
+            onClick={() => openBook(null)}
+            style={{ alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 10, background: "var(--surface2)", fontSize: 14, color: "var(--ink)", border: "none", cursor: "pointer", flexShrink: 0 }}
+          >
+            ← Retour
+          </button>
+          {/* Layout switcher — desktop only */}
+          <div className="max-[820px]:!hidden" style={{ display: "flex", gap: 8 }}>
+            {(["colonnes", "immersif"] as const).map((l) => {
+              const active = layout === l;
+              return (
+                <button key={l} onClick={() => setLayout(l)} style={{ padding: "6px 13px", borderRadius: 999, fontSize: 12.5, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`, background: active ? "var(--soft)" : "transparent", color: active ? "var(--accent)" : "var(--ink)" }}>
+                  {l === "colonnes" ? "Fiche en colonnes" : "Fiche immersive"}
+                </button>
+              );
+            })}
+          </div>
           {confirmDelete ? (
             <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
               <span style={{ fontSize: 13, color: "var(--muted)" }}>Supprimer ce livre ?</span>
@@ -211,7 +222,7 @@ function BookSheetContent({ book }: { book: Book }) {
           ) : (
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               <button onClick={() => setConfirmDelete(true)} title="Supprimer le livre" style={{ width: 32, height: 32, borderRadius: 10, background: "var(--surface2)", fontSize: 14, color: "var(--muted)", border: "none", cursor: "pointer" }}>🗑</button>
-              <button onClick={() => openBook(null)} style={{ width: 32, height: 32, borderRadius: 10, background: "var(--surface2)", fontSize: 14 }}>✕</button>
+              <button className="max-[820px]:!hidden" onClick={() => openBook(null)} style={{ width: 32, height: 32, borderRadius: 10, background: "var(--surface2)", fontSize: 14 }}>✕</button>
             </div>
           )}
         </div>

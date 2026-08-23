@@ -39,7 +39,7 @@ export default function SearchScreen() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && query.trim()) runSearch(); }}
           style={{
-            flex: 1, minWidth: 220, maxWidth: 500, padding: "11px 16px", minHeight: 46,
+            flex: 1, minWidth: 220, padding: "11px 16px", minHeight: 46,
             border: "1px solid var(--line)", borderRadius: 12,
             background: "var(--surface)", fontSize: 14, outline: "none", color: "var(--ink)",
           }}
