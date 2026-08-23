@@ -1,6 +1,7 @@
 "use client";
 import { useStore } from "@/store";
 import { COVER_PALETTE } from "@/store/data";
+import StarField from "./StarField";
 
 const HERO_COVERS = [
   { title: "Une cour de roses et d'épines", author: "Sarah J. Maas", h: 150, ...{ bg: COVER_PALETTE[0][0], ink: COVER_PALETTE[0][1] } },
@@ -11,7 +12,7 @@ const HERO_COVERS = [
 ];
 
 export default function AuthPage() {
-  const { mode, form, authError, setFormField, submitAuth, toggleAuth, theme } = useStore();
+  const { mode, form, authError, setFormField, submitAuth, toggleAuth } = useStore();
   const isSignup = mode === "signup";
 
   const kicker = isSignup ? "Nouvelle étagère" : "Bon retour";
@@ -23,21 +24,22 @@ export default function AuthPage() {
   const switchLabel = isSignup ? "Déjà un compte ? Se connecter" : "Pas encore de compte ? En créer un";
 
   return (
-    <div data-theme={theme} style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+      <StarField />
+
       {/* Mobile logo */}
-      <div className="md:hidden flex items-center gap-2.5 p-6">
-        <div style={{ width: 28, height: 28, borderRadius: 9, background: "var(--accent)" }} />
-        <span style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 21, letterSpacing: "-0.01em" }}>
-          Marque-page
+      <div className="md:hidden flex items-center gap-2.5 p-6" style={{ position: "relative", zIndex: 1 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8, background: "var(--accent)",
+          display: "grid", placeItems: "center", fontSize: 14, color: "#161C2F", fontWeight: 700,
+        }}>✦</div>
+        <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 18, letterSpacing: ".18em", textTransform: "uppercase" }}>
+          Ex-Libris
         </span>
       </div>
 
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1.05fr 0.95fr",
-          minHeight: "100vh",
-        }}
+        style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", minHeight: "100vh", position: "relative", zIndex: 1 }}
         className="max-[820px]:grid-cols-1!"
       >
         {/* Left art column */}
@@ -46,23 +48,33 @@ export default function AuthPage() {
           style={{
             position: "relative",
             overflow: "hidden",
-            background: "var(--surface2)",
+            borderRight: "1px solid var(--line)",
             padding: "56px 60px",
             flexDirection: "column",
             justifyContent: "space-between",
+            background: "rgba(0,0,0,.16)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: "var(--accent)" }} />
-            <span style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 23, letterSpacing: "-0.01em" }}>
-              Marque-page
+          {/* Golden halo */}
+          <div style={{
+            position: "absolute", inset: 0, pointerEvents: "none",
+            background: "radial-gradient(900px 420px at 78% -10%, rgba(224,184,74,.14), transparent 72%)",
+          }} />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, background: "var(--accent)",
+              display: "grid", placeItems: "center", fontSize: 16, color: "#161C2F", fontWeight: 700, flexShrink: 0,
+            }}>✦</div>
+            <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 19, letterSpacing: ".18em", textTransform: "uppercase" }}>
+              Ex-Libris
             </span>
           </div>
 
-          <div style={{ maxWidth: 430 }}>
+          <div style={{ maxWidth: 430, position: "relative" }}>
             <p style={{
-              fontFamily: "var(--font-newsreader, Newsreader, serif)",
-              fontSize: 44, lineHeight: 1.12, letterSpacing: "-0.02em",
+              fontFamily: "var(--font-cinzel, Cinzel, serif)",
+              fontSize: 36, lineHeight: 1.24, letterSpacing: ".02em",
               margin: "0 0 18px", textWrap: "pretty",
             }}>
               Ta bibliothèque, tes pépites, et les ami·es qui lisent avec toi.
@@ -72,19 +84,21 @@ export default function AuthPage() {
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: 14, alignItems: "flex-end", height: 180 }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "flex-end", height: 180, position: "relative" }}>
             {HERO_COVERS.map((c) => (
               <div
                 key={c.title}
                 style={{
-                  width: 96, borderRadius: "4px 10px 10px 4px",
+                  width: 96, borderRadius: "4px 12px 12px 4px",
                   padding: "14px 12px", display: "flex", flexDirection: "column",
                   justifyContent: "space-between",
-                  boxShadow: "0 12px 24px -12px rgba(51,41,31,.4)",
+                  boxShadow: "0 18px 30px -16px #000",
                   background: c.bg, color: c.ink, height: c.h,
+                  borderLeft: "4px solid rgba(224,184,74,.7)",
+                  outline: "1px solid rgba(224,184,74,.32)", outlineOffset: -6,
                 }}
               >
-                <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 13, lineHeight: 1.2 }}>
+                <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 13, lineHeight: 1.2 }}>
                   {c.title}
                 </div>
                 <div style={{ fontSize: 8, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.7 }}>
@@ -96,15 +110,17 @@ export default function AuthPage() {
         </div>
 
         {/* Right form column */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "60px" }}
-          className="max-[820px]:!px-5 max-[820px]:!py-8 max-[820px]:!items-start">
+        <div
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "60px" }}
+          className="max-[820px]:!px-5 max-[820px]:!py-8 max-[820px]:!items-start"
+        >
           <div style={{ width: "100%", maxWidth: 360 }}>
             <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 14 }}>
               {kicker}
             </div>
             <h1 style={{
-              fontFamily: "var(--font-newsreader, Newsreader, serif)",
-              fontWeight: 400, fontSize: 34, letterSpacing: "-0.02em", margin: "0 0 8px",
+              fontFamily: "var(--font-cinzel, Cinzel, serif)",
+              fontWeight: 400, fontSize: 29, letterSpacing: ".04em", margin: "0 0 8px",
             }}>
               {title}
             </h1>
@@ -112,9 +128,7 @@ export default function AuthPage() {
 
             {isSignup && (
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 7 }}>
-                  Pseudo
-                </label>
+                <label style={labelStyle}>Pseudo</label>
                 <input
                   value={form.name}
                   onChange={(e) => setFormField("name", e.target.value)}
@@ -153,8 +167,10 @@ export default function AuthPage() {
             <button
               onClick={submitAuth}
               style={{
-                width: "100%", marginTop: 12, padding: 14, borderRadius: 11,
-                background: "var(--accent)", color: "#fff", fontSize: 15, fontWeight: 600, letterSpacing: ".01em",
+                width: "100%", marginTop: 12, padding: 14, borderRadius: 10,
+                background: "var(--accent)", color: "#161C2F",
+                fontFamily: "var(--font-cinzel, Cinzel, serif)",
+                fontSize: 14, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase",
               }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.07)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = ""; }}

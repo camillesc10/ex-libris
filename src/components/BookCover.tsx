@@ -11,7 +11,28 @@ interface Props {
 
 export default function BookCover({ book, width = 132, height = 196, className = "", onClick }: Props) {
   const spiceStr = "🌶".repeat(book.spice) || "";
-  const stars = "★".repeat(book.rating);
+  const inCours = book.lists.includes("En cours");
+  const progress = book.pages > 0 ? Math.round((book.page / book.pages) * 100) : 0;
+
+  const stateLabel = inCours
+    ? `${progress}%`
+    : book.lists.includes("Déjà lu")
+      ? "Déjà lu"
+      : book.lists.includes("PAL")
+        ? "PAL"
+        : book.lists.includes("En pause")
+          ? "En pause"
+          : book.lists.includes("À relire")
+            ? "À relire"
+            : book.lists.includes("Abandonné")
+              ? "Abandonné"
+              : "";
+
+  const pageLabel = inCours && book.pages > 0
+    ? `p. ${book.page} / ${book.pages}`
+    : book.pages > 0
+      ? `${book.pages} p.`
+      : "";
 
   return (
     <button
@@ -24,12 +45,27 @@ export default function BookCover({ book, width = 132, height = 196, className =
           height, borderRadius: "4px 12px 12px 4px",
           padding: "16px 14px", display: "flex", flexDirection: "column",
           justifyContent: "space-between",
-          boxShadow: "0 14px 26px -14px rgba(51,41,31,.45)",
+          boxShadow: "0 18px 30px -16px #000",
           background: book.bg, color: book.ink,
-          borderLeft: "5px solid rgba(0,0,0,.12)",
+          borderLeft: "4px solid rgba(224,184,74,.7)",
+          outline: "1px solid rgba(224,184,74,.32)", outlineOffset: -6,
+          position: "relative", overflow: "hidden",
         }}
       >
-        <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 16, lineHeight: 1.18, letterSpacing: "-0.01em" }}>
+        {/* Reading progress bar */}
+        {inCours && book.pages > 0 && (
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: 4,
+            background: "rgba(0,0,0,.3)",
+          }}>
+            <div style={{
+              height: "100%", width: `${progress}%`,
+              background: "rgba(224,184,74,.8)", transition: "width .3s",
+            }} />
+          </div>
+        )}
+
+        <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 15, lineHeight: 1.2, letterSpacing: ".02em" }}>
           {book.title}
         </div>
         <div>
@@ -39,9 +75,9 @@ export default function BookCover({ book, width = 132, height = 196, className =
           <div style={{ fontSize: 11 }}>{spiceStr}</div>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9, fontSize: 12, color: "var(--muted)" }}>
-        <span>{book.genre}</span>
-        <span style={{ color: "var(--accent)" }}>{stars}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9, fontSize: 11.5, color: "var(--muted)" }}>
+        <span>{pageLabel}</span>
+        <span style={{ color: "var(--accent)", fontWeight: 600 }}>{stateLabel}</span>
       </div>
     </button>
   );

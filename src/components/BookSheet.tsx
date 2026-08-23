@@ -2,21 +2,26 @@
 import { useState } from "react";
 import { useStore } from "@/store";
 import { GENRES, TROPES, SPICE_LABELS, RATING_LABELS } from "@/store/data";
+import type { Book } from "@/types";
 
 export default function BookSheet() {
+  const open = useStore((s) => s.open);
+  const book = useStore((s) => s.books.find((b) => b.id === s.open));
+  if (!open || !book) return null;
+  return <BookSheetContent book={book} />;
+}
+
+function BookSheetContent({ book }: { book: Book }) {
   const {
-    books, open, layout, lists,
+    layout, lists,
     openBook, setLayout, patchBook, addPlatform, navigate, setReadBook,
     ping,
   } = useStore();
 
-  const book = books.find((b) => b.id === open);
-  if (!book) return null;
-
   const [tropeDraft, setTropeDraft] = useState("");
   const [platformDraft, setPlatformDraft] = useState("");
 
-  const patch = (fn: (b: typeof book) => typeof book) => patchBook(book.id, fn);
+  const patch = (fn: (b: Book) => Book) => patchBook(book.id, fn);
 
   const isColonnes = layout === "colonnes";
   const isImmersif = layout === "immersif";
@@ -124,7 +129,7 @@ export default function BookSheet() {
             <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", opacity: 0.7, marginBottom: 12 }}>
               {book.genre} · {book.year}
             </div>
-            <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 40, lineHeight: 1.08, letterSpacing: "-0.02em", maxWidth: 620, textWrap: "pretty" }}>
+            <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 40, lineHeight: 1.08, letterSpacing: ".02em", maxWidth: 620, textWrap: "pretty" }}>
               {book.title}
             </div>
             <div style={{ fontSize: 15, marginTop: 10, opacity: 0.8 }}>{book.author}</div>
@@ -150,7 +155,7 @@ export default function BookSheet() {
                   background: book.bg, color: book.ink,
                   boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20,
                 }}>
-                  <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 24, lineHeight: 1.15, letterSpacing: "-0.01em" }}>
+                  <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 22, lineHeight: 1.2, letterSpacing: ".02em" }}>
                     {book.title}
                   </div>
                   <div style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>
@@ -196,7 +201,7 @@ export default function BookSheet() {
               <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                 <button
                   onClick={recommend}
-                  style={{ padding: 12, borderRadius: 12, background: "var(--accent)", color: "#fff", fontSize: 13.5, fontWeight: 600 }}
+                  style={{ padding: 12, borderRadius: 12, background: "var(--accent)", color: "#161C2F", fontSize: 13.5, fontWeight: 600 }}
                 >
                   Recommander à une amie
                 </button>
@@ -216,7 +221,7 @@ export default function BookSheet() {
                   <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 10 }}>
                     {book.genre} · {book.year} · {book.lang}
                   </div>
-                  <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 32, lineHeight: 1.12, letterSpacing: "-0.02em", textWrap: "pretty" }}>
+                  <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 30, lineHeight: 1.15, letterSpacing: ".02em", textWrap: "pretty" }}>
                     {book.title}
                   </div>
                   <div style={{ fontSize: 15, color: "var(--muted)", marginTop: 7 }}>{book.author}</div>

@@ -3,7 +3,7 @@ import { useStore } from "@/store";
 
 const PAGE_META: Record<string, { kicker: string; title: string }> = {
   shelf: { kicker: "Bibliothèque", title: "Mon étagère" },
-  search: { kicker: "Recherche", title: "Ajouter un livre" },
+  search: { kicker: "Google Books · Open Library", title: "Ajouter un livre" },
   lists: { kicker: "Organisation", title: "Mes listes" },
   messages: { kicker: "Club de lecture", title: "Messages" },
   sync: { kicker: "Sans spoiler", title: "Lecture partagée" },
@@ -30,8 +30,8 @@ export default function Header() {
           {meta.kicker}
         </div>
         <h1 style={{
-          fontFamily: "var(--font-newsreader, Newsreader, serif)",
-          fontWeight: 400, fontSize: 27, letterSpacing: "-0.02em", margin: "2px 0 0",
+          fontFamily: "var(--font-cinzel, Cinzel, serif)",
+          fontWeight: 400, fontSize: 27, letterSpacing: ".02em", margin: "2px 0 0",
         }}>
           {meta.title}
         </h1>

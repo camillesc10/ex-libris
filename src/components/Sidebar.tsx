@@ -2,10 +2,9 @@
 import { useStore } from "@/store";
 import type { Theme } from "@/types";
 
-const THEMES: { key: Theme; name: string; swatch: string }[] = [
-  { key: "camomille", name: "Camomille", swatch: "#EBD5C9" },
-  { key: "lavande", name: "Lavande", swatch: "#DCD6EA" },
-  { key: "sauge", name: "Sauge", swatch: "#D9E2D3" },
+const THEMES: { key: Theme; label: string; swatch: string }[] = [
+  { key: "constelle", label: "Nuit constellée", swatch: "#252D46" },
+  { key: "velin", label: "Vélin", swatch: "#31281F" },
 ];
 
 export default function Sidebar() {
@@ -29,13 +28,21 @@ export default function Sidebar() {
         borderRight: "1px solid var(--line)", padding: "26px 18px",
         display: "flex", flexDirection: "column", gap: 26,
         position: "sticky", top: 0, height: "100vh",
+        background: "color-mix(in srgb, var(--bg) 80%, transparent)",
+        backdropFilter: "blur(12px)",
       }}
     >
       {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "0 8px" }}>
-        <div style={{ width: 26, height: 26, borderRadius: 8, background: "var(--accent)" }} />
-        <span style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 20, letterSpacing: "-0.01em" }}>
-          Marque-page
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px" }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: 8, background: "var(--accent)",
+          display: "grid", placeItems: "center", fontSize: 16, color: "#161C2F", fontWeight: 700, flexShrink: 0,
+        }}>✦</div>
+        <span style={{
+          fontFamily: "var(--font-cinzel, Cinzel, serif)",
+          fontSize: 17, letterSpacing: ".18em", textTransform: "uppercase",
+        }}>
+          Ex-Libris
         </span>
       </div>
 
@@ -90,7 +97,7 @@ export default function Sidebar() {
                 onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 3, background: l.dot, flexShrink: 0 }} />
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: l.dot, flexShrink: 0 }} />
                   <span style={{ color: active ? "var(--accent)" : "var(--ink)", fontWeight: active ? 600 : 400 }}>{l.name}</span>
                 </span>
                 <span style={{ fontSize: 12, color: "var(--muted)" }}>{count}</span>
@@ -111,11 +118,13 @@ export default function Sidebar() {
               <button
                 key={t.key}
                 onClick={() => setTheme(t.key)}
-                title={t.name}
+                title={t.label}
                 style={{
-                  width: 26, height: 26, borderRadius: 9, background: t.swatch,
+                  width: 26, height: 26, borderRadius: "50%", background: t.swatch,
                   border: `2px solid ${theme === t.key ? "var(--accent)" : "transparent"}`,
-                  transition: "border-color .12s",
+                  outline: theme === t.key ? "2px solid var(--accent)" : "none",
+                  outlineOffset: 2,
+                  transition: "border-color .12s, outline .12s",
                 }}
               />
             ))}
@@ -126,7 +135,7 @@ export default function Sidebar() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: "var(--surface2)" }}>
           <div style={{
             width: 30, height: 30, borderRadius: "50%", background: "var(--accent)",
-            color: "#fff", display: "grid", placeItems: "center", fontSize: 13, fontWeight: 600, flexShrink: 0,
+            color: "#161C2F", display: "grid", placeItems: "center", fontSize: 13, fontWeight: 700, flexShrink: 0,
           }}>
             {user[0]?.toUpperCase()}
           </div>

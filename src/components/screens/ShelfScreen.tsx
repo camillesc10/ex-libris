@@ -1,7 +1,6 @@
 "use client";
 import { useStore } from "@/store";
 import BookCover from "../BookCover";
-import type { Book } from "@/types";
 
 const GENRES_ALL = ["Tous", "Romantasy", "Romance", "Fantasy", "SF", "Thriller", "Contemporain", "Historique", "Dystopie", "Cosy mystery"];
 
@@ -9,10 +8,13 @@ const SHELF_ORDER = [
   { key: "En cours", label: "En cours de lecture", meta: "marque-pages en service" },
   { key: "PAL", label: "Pile à lire", meta: "les prochains sur la liste" },
   { key: "Déjà lu", label: "Déjà lu", meta: "terminés, notés" },
+  { key: "En pause", label: "En pause", meta: "interrompus, mais pas abandonnés" },
+  { key: "À relire", label: "À relire", meta: "trop bons pour une seule lecture" },
+  { key: "Abandonné", label: "Abandonné", meta: "la vie est trop courte" },
 ];
 
 export default function ShelfScreen() {
-  const { books, lists, genre, maxSpice, listFilter, setGenre, setMaxSpice, openBook } = useStore();
+  const { books, genre, maxSpice, listFilter, setGenre, setMaxSpice, openBook } = useStore();
 
   const filtered = books.filter((b) => {
     if (listFilter && !b.lists.includes(listFilter)) return false;
@@ -22,6 +24,8 @@ export default function ShelfScreen() {
   });
 
   const genresPresent = ["Tous", ...Array.from(new Set(books.map((b) => b.genre)))];
+
+  void GENRES_ALL;
 
   const shelves = listFilter
     ? [{ key: listFilter, label: listFilter, meta: `${filtered.length} livre(s)`, books: filtered }]
@@ -41,8 +45,8 @@ export default function ShelfScreen() {
               style={{
                 padding: "7px 14px", borderRadius: 999, fontSize: 13,
                 border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`,
-                background: active ? "var(--accent)" : "transparent",
-                color: active ? "#fff" : "var(--ink)",
+                background: active ? "var(--soft)" : "transparent",
+                color: active ? "var(--accent)" : "var(--ink)",
                 transition: "all .12s",
               }}
             >
@@ -61,8 +65,8 @@ export default function ShelfScreen() {
                 style={{
                   width: 26, height: 26, borderRadius: 8, fontSize: 12,
                   background: active ? "var(--accent)" : "var(--surface2)",
-                  color: active ? "#fff" : "var(--ink)",
-                  fontWeight: active ? 600 : 400,
+                  color: active ? "#161C2F" : "var(--ink)",
+                  fontWeight: active ? 700 : 400,
                 }}
               >
                 {n}
@@ -81,7 +85,7 @@ export default function ShelfScreen() {
       {shelves.map((row) => (
         <div key={row.key} style={{ marginBottom: 44 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
-            <h2 style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontWeight: 400, fontSize: 20, margin: 0 }}>
+            <h2 style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontWeight: 400, fontSize: 20, margin: 0, letterSpacing: ".02em" }}>
               {row.label}
             </h2>
             <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{row.meta}</span>
@@ -89,11 +93,11 @@ export default function ShelfScreen() {
           <div
             style={{
               display: "flex", gap: 22, alignItems: "flex-end",
-              overflowX: "auto", paddingBottom: 14,
-              borderBottom: "9px solid var(--shelf)",
+              overflowX: "auto", paddingBottom: 16,
+              borderBottom: "6px solid var(--shelf)",
               borderRadius: "0 0 6px 6px",
-              boxShadow: "0 14px 22px -18px rgba(51,41,31,.5)",
-              minHeight: 210,
+              boxShadow: "0 8px 0 -4px rgba(224,184,74,.7), 0 10px 24px -6px rgba(224,184,74,.26), 0 26px 32px -26px #000",
+              minHeight: 220,
             }}
           >
             {row.books.map((b) => (

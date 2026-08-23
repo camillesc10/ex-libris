@@ -43,7 +43,7 @@ export default function SyncScreen() {
       {/* Setup card */}
       <div style={{ border: "1px solid var(--line)", borderRadius: 20, background: "var(--surface)", padding: "22px 24px", marginBottom: 26 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
-          <span style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 20 }}>Lire ensemble</span>
+          <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 20 }}>Lire ensemble</span>
           <span style={{ fontSize: 12.5, color: "var(--muted)" }}>Un livre, une ou plusieurs personnes — les notes restent scellées page par page pour chacun·e.</span>
         </div>
 
@@ -148,14 +148,14 @@ export default function SyncScreen() {
             background: rb.bg, color: rb.ink,
             boxShadow: "0 12px 22px -12px rgba(51,41,31,.45)",
           }}>
-            <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 14, lineHeight: 1.18 }}>{rb.title}</div>
+            <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 14, lineHeight: 1.18 }}>{rb.title}</div>
             <div style={{ fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{rb.author}</div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 6 }}>
               {progressHeader}
             </div>
-            <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 23, marginBottom: 18 }}>{rb.title}</div>
+            <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 23, marginBottom: 18 }}>{rb.title}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {allProgress.map((p) => (
                 <div key={p.who}>
@@ -170,7 +170,7 @@ export default function SyncScreen() {
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
-              <span style={{ fontSize: 13, color: "var(--muted)" }}>J'en suis page</span>
+              <span style={{ fontSize: 13, color: "var(--muted)" }}>J&apos;en suis page</span>
               <input
                 value={pageInput}
                 onChange={(e) => setPageInput(e.target.value)}
@@ -182,7 +182,7 @@ export default function SyncScreen() {
               />
               <button
                 onClick={declarePage}
-                style={{ padding: "10px 16px", borderRadius: 10, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600 }}
+                style={{ padding: "10px 16px", borderRadius: 10, background: "var(--accent)", color: "#161C2F", fontSize: 13, fontWeight: 600 }}
               >
                 Je suis arrivée là
               </button>
@@ -202,7 +202,7 @@ export default function SyncScreen() {
               <div key={`${n.page}-${n.who}`} style={{ display: "flex", gap: 16 }}>
                 <div style={{ width: 76, flexShrink: 0, textAlign: "right", paddingTop: 14 }}>
                   <div style={{
-                    fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 17,
+                    fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17,
                     color: unlocked ? "var(--accent)" : "var(--muted)",
                   }}>
                     p. {n.page}
@@ -236,7 +236,7 @@ export default function SyncScreen() {
                       }}>
                         🔒
                       </span>
-                      <span>Scellé jusqu'à la page {n.page} — encore {n.page - myPage} pages</span>
+                      <span>Scellé jusqu&apos;à la page {n.page} — encore {n.page - myPage} pages</span>
                     </div>
                   )}
                 </div>
@@ -269,7 +269,7 @@ export default function SyncScreen() {
               />
               <button
                 onClick={addNote}
-                style={{ padding: "13px 18px", borderRadius: 14, background: "var(--accent)", color: "#fff", fontSize: 13.5, fontWeight: 600 }}
+                style={{ padding: "13px 18px", borderRadius: 14, background: "var(--accent)", color: "#161C2F", fontSize: 13.5, fontWeight: 600 }}
               >
                 Sceller
               </button>
@@ -298,9 +298,9 @@ export default function SyncScreen() {
                   <span style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: allPassed ? "var(--accent)" : "var(--muted)" }}>
                     {c.kicker}
                   </span>
-                  <span style={{ fontSize: 12, color: "var(--muted)" }}>jusqu'à p. {c.page}</span>
+                  <span style={{ fontSize: 12, color: "var(--muted)" }}>jusqu&apos;à p. {c.page}</span>
                 </div>
-                <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 19, lineHeight: 1.2 }}>
+                <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 19, lineHeight: 1.2 }}>
                   {c.label}
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>

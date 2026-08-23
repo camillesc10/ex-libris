@@ -23,7 +23,7 @@ export default function ListsScreen() {
           onClick={addList}
           style={{
             padding: "12px 18px", borderRadius: 11,
-            background: "var(--accent)", color: "#fff", fontSize: 13.5, fontWeight: 600,
+            background: "var(--accent)", color: "#161C2F", fontSize: 13.5, fontWeight: 600,
           }}
         >
           Créer la liste
@@ -42,7 +42,7 @@ export default function ListsScreen() {
             >
               <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 3, background: l.dot, flexShrink: 0 }} />
-                <span style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 19 }}>{l.name}</span>
+                <span style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17 }}>{l.name}</span>
                 <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--muted)" }}>{count} livre(s)</span>
               </div>
               <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 16 }}>{l.desc}</div>
@@ -60,7 +60,7 @@ export default function ListsScreen() {
                       style={{
                         width: 66, height: 98, borderRadius: "3px 8px 8px 3px",
                         padding: "9px 8px", textAlign: "left",
-                        fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 11, lineHeight: 1.15,
+                        fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 11, lineHeight: 1.15,
                         background: b.bg, color: b.ink,
                         boxShadow: "0 8px 16px -10px rgba(51,41,31,.5)",
                         transition: "transform .18s ease",

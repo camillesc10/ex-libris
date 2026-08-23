@@ -1,6 +1,6 @@
 "use client";
 import { useStore } from "@/store";
-import type { Screen, Theme } from "@/types";
+import type { Screen } from "@/types";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import BottomNav from "./BottomNav";
@@ -12,14 +12,16 @@ import SyncScreen from "./screens/SyncScreen";
 import BookSheet from "./BookSheet";
 import Toast from "./Toast";
 import InstallBanner from "./InstallBanner";
+import StarField from "./StarField";
 
 export default function AppShell() {
   const { theme, screen, open, toast } = useStore();
 
   return (
-    <div data-theme={theme} style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div data-theme={theme} style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+      <StarField />
       <div
-        style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh" }}
+        style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", position: "relative", zIndex: 1 }}
         className="max-[820px]:grid-cols-1!"
       >
         <Sidebar />

@@ -1,14 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader, Karla } from "next/font/google";
+import { Cinzel, Karla } from "next/font/google";
 import "./globals.css";
 
-const newsreader = Newsreader({
+const cinzel = Cinzel({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-newsreader",
+  weight: ["400", "600"],
+  variable: "--font-cinzel",
   display: "swap",
-  axes: ["opsz"],
 });
 
 const karla = Karla({
@@ -20,18 +18,18 @@ const karla = Karla({
 });
 
 export const metadata: Metadata = {
-  title: "Marque-page",
+  title: "Ex-Libris",
   description: "Ta bibliothèque, tes pépites, et les ami·es qui lisent avec toi.",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Marque-page",
+    statusBarStyle: "black-translucent",
+    title: "Ex-Libris",
   },
   manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F5F2F8",
+  themeColor: "#161C2F",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -43,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <style>{`
           :root {
-            --font-newsreader: ${newsreader.style.fontFamily};
+            --font-cinzel: ${cinzel.style.fontFamily};
             --font-karla: ${karla.style.fontFamily};
           }
         `}</style>

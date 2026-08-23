@@ -17,7 +17,7 @@ export default function InstallBanner() {
       }}
     >
       <span style={{ flex: 1 }}>
-        Garde Marque-page sur ton téléphone : <strong>Partager</strong> puis <strong>Sur l'écran d'accueil</strong>.
+        Garde Ex-Libris sur ton téléphone : <strong>Partager</strong> puis <strong>Sur l&apos;écran d&apos;accueil</strong>.
       </span>
       <button
         onClick={dismissTip}

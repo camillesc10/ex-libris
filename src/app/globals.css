@@ -1,47 +1,35 @@
 @import "tailwindcss";
 
-/* ── Design tokens — thème Lavande (défaut) ── */
+/* ── Design tokens — thème Nuit constellée (défaut) ── */
 :root {
-  --bg: #F5F2F8;
-  --surface: #FFFFFF;
-  --surface2: #EDE7F3;
-  --ink: #2F2A38;
-  --muted: #7E7590;
-  --line: #E4DCEE;
-  --accent: #8A6FB0;
-  --soft: #EBE0F5;
-  --shelf: #DED2EA;
+  --bg: #161C2F;
+  --surface: #1D2439;
+  --surface2: #252D46;
+  --ink: #F3EBD9;
+  --muted: #96A1BE;
+  --line: #2D3653;
+  --accent: #E0B84A;
+  --soft: #28304B;
+  --shelf: #080B14;
 }
 
-[data-theme="camomille"] {
-  --bg: #FBF4EC;
-  --surface: #FFFDFA;
-  --surface2: #F4E9DC;
-  --ink: #33291F;
-  --muted: #8B7A67;
-  --line: #E9DBCA;
-  --accent: #C4735C;
-  --soft: #F5DED3;
-  --shelf: #E2CDB3;
-}
-
-[data-theme="sauge"] {
-  --bg: #F1F4EE;
-  --surface: #FDFEFC;
-  --surface2: #E4EBDE;
-  --ink: #26302A;
-  --muted: #6F8073;
-  --line: #DAE4D5;
-  --accent: #5E8B6A;
-  --soft: #DDEBDF;
-  --shelf: #CFDDC8;
+[data-theme="velin"] {
+  --bg: #1F1912;
+  --surface: #271F18;
+  --surface2: #31281F;
+  --ink: #F0E2CB;
+  --muted: #A5917A;
+  --line: #3B2F24;
+  --accent: #C98B4B;
+  --soft: #332818;
+  --shelf: #0D0A07;
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background-color: var(--bg);
   color: var(--ink);
   font-family: Karla, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -45,7 +45,7 @@ export default function SearchScreen() {
             backgroundColor: bg,
             ...(r.cover ? { backgroundImage: `url(${r.cover})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
             color: ink, display: "flex", alignItems: "flex-end",
-            padding: 10, fontFamily: "var(--font-newsreader, Newsreader, serif)",
+            padding: 10, fontFamily: "var(--font-cinzel, Cinzel, serif)",
             fontSize: 12, lineHeight: 1.15,
           };
           return (
@@ -58,7 +58,7 @@ export default function SearchScreen() {
             >
               <div style={coverStyle}>{!r.cover && r.title}</div>
               <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-                <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 17, lineHeight: 1.2, marginBottom: 4 }}>
+                <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 17, lineHeight: 1.2, marginBottom: 4 }}>
                   {r.title}
                 </div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8 }}>

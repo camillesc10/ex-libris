@@ -81,6 +81,7 @@ interface AppState {
 
   patchBook: (id: string, fn: (b: Book) => Book) => void;
   addPlatform: (bookId: string, raw: string) => void;
+  updatePage: (bookId: string, page: number) => void;
 
   setGenre: (g: string) => void;
   setMaxSpice: (n: number) => void;
@@ -116,7 +117,7 @@ export const useStore = create<AppState>((set, get) => ({
   authError: "",
   user: "Lila",
 
-  theme: "lavande",
+  theme: "constelle",
   layout: "colonnes",
   flow: "fil",
   showTip: true,
@@ -214,6 +215,25 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
+  updatePage(bookId, page) {
+    get().patchBook(bookId, (b) => {
+      const lists = [...b.lists];
+      // Moving to En cours removes from PAL
+      if (!lists.includes("En cours")) {
+        const palIdx = lists.indexOf("PAL");
+        if (palIdx !== -1) lists.splice(palIdx, 1);
+        lists.push("En cours");
+      }
+      // Reaching last page marks as Déjà lu
+      if (page >= b.pages && b.pages > 0) {
+        const coursIdx = lists.indexOf("En cours");
+        if (coursIdx !== -1) lists.splice(coursIdx, 1);
+        if (!lists.includes("Déjà lu")) lists.push("Déjà lu");
+      }
+      return { ...b, page, lists };
+    });
+  },
+
   // ── Filters ──
   setGenre: (g) => set({ genre: g }),
   setMaxSpice: (n) => set((s) => ({ maxSpice: s.maxSpice === n ? 5 : n })),
@@ -277,7 +297,7 @@ export const useStore = create<AppState>((set, get) => ({
     const [bg, ink] = COVER_PALETTE[i % COVER_PALETTE.length];
     const nb: Book = {
       id: `b${i}`, title: r.title, author: r.author, year: r.year,
-      genre: "Romance", lang: r.lang, spice: 0, rating: 0, pages: r.pages,
+      genre: "Romance", lang: r.lang, spice: 0, rating: 0, pages: r.pages, page: 0,
       tropes: [], lists: ["PAL"], resume: r.snippet, comment: "",
       bg, ink, platforms: [{ name: "Kobo", langs: "FR, EN" }],
     };
@@ -292,7 +312,7 @@ export const useStore = create<AppState>((set, get) => ({
     const name = get().newList.trim();
     if (!name) return;
     set((s) => ({
-      lists: [...s.lists, { name, dot: "#A99BC1", desc: "" }],
+      lists: [...s.lists, { name, dot: "#96A1BE", desc: "" }],
       newList: "",
     }));
   },

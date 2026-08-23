@@ -1,4 +1,4 @@
-export type Theme = "lavande" | "camomille" | "sauge";
+export type Theme = "constelle" | "velin";
 export type Layout = "colonnes" | "immersif";
 export type Flow = "fil" | "jalons";
 export type Screen = "shelf" | "search" | "lists" | "messages" | "sync";
@@ -18,6 +18,7 @@ export interface Book {
   spice: number; // 0–5
   rating: number; // 0–5
   pages: number;
+  page: number; // current reading page
   tropes: string[];
   lists: string[];
   resume: string;

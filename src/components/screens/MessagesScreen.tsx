@@ -110,13 +110,13 @@ export default function MessagesScreen() {
                           <div style={{
                             width: 58, height: 86, flexShrink: 0,
                             borderRadius: "3px 7px 7px 3px", padding: "8px 7px",
-                            fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 10.5, lineHeight: 1.15,
+                            fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 10.5, lineHeight: 1.15,
                             background: book.bg, color: book.ink,
                           }}>
                             {book.title}
                           </div>
                           <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-                            <div style={{ fontFamily: "var(--font-newsreader, Newsreader, serif)", fontSize: 15, lineHeight: 1.2 }}>
+                            <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 15, lineHeight: 1.2 }}>
                               {book.title}
                             </div>
                             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 3 }}>{book.author}</div>
@@ -160,7 +160,7 @@ export default function MessagesScreen() {
                 onClick={sendDraft}
                 style={{
                   padding: "12px 18px", borderRadius: 11,
-                  background: "var(--accent)", color: "#fff", fontSize: 13.5, fontWeight: 600,
+                  background: "var(--accent)", color: "#161C2F", fontSize: 13.5, fontWeight: 600,
                 }}
               >
                 Envoyer
