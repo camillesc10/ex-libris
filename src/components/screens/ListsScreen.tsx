@@ -99,7 +99,7 @@ export default function ListsScreen() {
                   )}
                 </div>
               )}
-              <div style={{ display: "flex", gap: 10, alignItems: "flex-end", minHeight: 104 }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-end", height: 104, overflow: "hidden" }}>
                 {listBooks.length === 0 ? (
                   <div style={{ fontSize: 12.5, color: "var(--muted)", fontStyle: "italic" }}>
                     Encore vide — ajoute des livres depuis leur fiche.
@@ -111,12 +111,15 @@ export default function ListsScreen() {
                       onClick={() => openBook(b.id)}
                       className="mini-cover"
                       style={{
-                        width: 66, height: 98, borderRadius: "3px 8px 8px 3px",
+                        flexShrink: 0, width: 66, height: 98,
+                        borderRadius: "3px 8px 8px 3px",
                         padding: "9px 8px", textAlign: "left",
                         fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 11, lineHeight: 1.15,
                         background: b.bg, color: b.ink,
                         boxShadow: "0 8px 16px -10px rgba(51,41,31,.5)",
                         transition: "transform .18s ease",
+                        overflow: "hidden",
+                        display: "block",
                       }}
                     >
                       {b.title}
