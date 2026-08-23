@@ -117,17 +117,36 @@ function BookSheetContent({ book }: { book: Book }) {
     setFetchingInfo(true);
     try {
       const q = encodeURIComponent(`${book.title} ${book.author}`);
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=1&q=${q}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=5&q=${q}`);
       const j = await res.json();
-      const it = j.items?.[0];
-      if (!it) { ping("Aucun résultat trouvé sur Google Books."); return; }
-      const v = it.volumeInfo || {};
-      const imageLinks = v.imageLinks || {};
-      const coverUrl: string = (imageLinks.extraLarge || imageLinks.large || imageLinks.medium || imageLinks.thumbnail || "").replace("http://", "https://");
+      const items: Record<string, unknown>[] = j.items || [];
+      if (!items.length) { ping("Aucun résultat trouvé sur Google Books."); return; }
+
+      // Pick the first result that has a cover image, else fall back to the first result
+      let best = items[0];
+      for (const it of items) {
+        const il = ((it.volumeInfo as Record<string, unknown>)?.imageLinks as Record<string, string>) || {};
+        if (il.thumbnail || il.smallThumbnail) { best = it; break; }
+      }
+
+      const v = (best.volumeInfo as Record<string, unknown>) || {};
+      const il = (v.imageLinks as Record<string, string>) || {};
+      // zoom=0 gives a larger image than zoom=1
+      let coverUrl = (il.thumbnail || il.smallThumbnail || "")
+        .replace("http://", "https://")
+        .replace("zoom=1", "zoom=0");
+
+      // Fallback: Open Library cover via ISBN
+      if (!coverUrl) {
+        const ids = (v.industryIdentifiers as { type: string; identifier: string }[]) || [];
+        const isbn = ids.find((i) => i.type === "ISBN_13")?.identifier || ids.find((i) => i.type === "ISBN_10")?.identifier;
+        if (isbn) coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+      }
+
       patch((b) => ({
         ...b,
         ...(coverUrl ? { coverUrl } : {}),
-        ...(v.pageCount && !b.pages ? { pages: v.pageCount } : {}),
+        ...(v.pageCount && !b.pages ? { pages: v.pageCount as number } : {}),
         ...(v.description && !b.resume ? { resume: (v.description as string).slice(0, 400) + "…" } : {}),
         ...(v.publishedDate && !b.year ? { year: (v.publishedDate as string).slice(0, 4) } : {}),
         ...(v.language && !b.lang ? { lang: (v.language as string).toUpperCase() } : {}),

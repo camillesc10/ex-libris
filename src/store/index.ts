@@ -510,6 +510,7 @@ export const useStore = create<AppState>((set, get) => ({
       genre: "Romance", lang: r.lang, spice: 0, rating: 0, pages: r.pages, page: 0,
       tropes: [], lists: ["PAL"], resume: r.snippet, comment: "",
       bg, ink, platforms: [{ name: "Kobo", langs: "FR, EN" }],
+      ...(r.cover ? { coverUrl: r.cover } : {}),
     };
     set((s) => ({ books: [...s.books, nb], added: [...s.added, r.key], open: nb.id }));
     fetch("/api/books", {
