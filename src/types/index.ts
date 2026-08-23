@@ -1,11 +1,25 @@
 export type Theme = "constelle" | "velin";
 export type Layout = "colonnes" | "immersif";
 export type Flow = "fil" | "jalons";
-export type Screen = "shelf" | "search" | "lists" | "messages" | "sync";
+export type Screen = "shelf" | "search" | "lists" | "messages" | "sync" | "authors" | "journal" | "timeline";
 
 export interface Platform {
   name: string;
   langs: string;
+}
+
+export interface PageNote {
+  page: number;
+  text: string;
+  date: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  date: string;
+  bookId: string;
+  pagesRead: number;
+  note: string;
 }
 
 export interface Book {
@@ -15,10 +29,10 @@ export interface Book {
   year: string;
   genre: string;
   lang: string;
-  spice: number; // 0–5
-  rating: number; // 0–5
+  spice: number;
+  rating: number;
   pages: number;
-  page: number; // current reading page
+  page: number;
   tropes: string[];
   lists: string[];
   resume: string;
@@ -26,22 +40,30 @@ export interface Book {
   bg: string;
   ink: string;
   platforms: Platform[];
-  startedAt?: string;  // ISO date string — date de début de lecture
-  finishedAt?: string; // ISO date string — date de fin de lecture
-  series?: string;     // nom de la saga
-  seriesNum?: number;  // numéro du tome
+  startedAt?: string;
+  finishedAt?: string;
+  series?: string;
+  seriesNum?: number;
+  pageNotes?: PageNote[];
+  pros?: string;
+  cons?: string;
+  quote?: string;
+  dnfReason?: string;
+  relatedBooks?: string[];
+  reminderDate?: string;
 }
 
 export interface BookList {
   name: string;
   dot: string;
   desc: string;
+  shareCode?: string;
 }
 
 export interface Message {
   from: "me" | "them";
   text?: string;
-  book?: string; // book id
+  book?: string;
 }
 
 export interface Conversation {

@@ -21,6 +21,7 @@ import {
   SEED_BOOKS, SEED_LISTS, SEED_CONVOS, SEED_NOTES, SEED_READERS,
   COVER_PALETTE,
 } from "./data";
+import type { JournalEntry } from "@/types";
 
 interface AppState {
   // Auth
@@ -39,7 +40,7 @@ interface AppState {
   // Navigation
   screen: Screen;
   listFilter: string | null;
-  open: string | null; // book id of open sheet
+  open: string | null;
 
   // Library
   books: Book[];
@@ -51,6 +52,16 @@ interface AppState {
   maxSpice: number;
   librarySearch: string;
   tropeFilter: string | null;
+  shelfSort: "default" | "rating" | "pages" | "date" | "alpha";
+  advFilters: { minRating: number; minPages: number; maxPages: number; lang: string; year: string };
+  palWaveSize: number;
+
+  // Shelf customisation
+  shelfColors: Record<string, string>;
+  yearGoal: number;
+
+  // Journal
+  journalEntries: JournalEntry[];
 
   // Search
   query: string;
@@ -63,7 +74,7 @@ interface AppState {
   convos: Conversation[];
   convo: string;
   draft: string;
-  pal: string[]; // book ids added from messages
+  pal: string[];
 
   // Shared reading
   readBook: string;
@@ -106,7 +117,13 @@ interface AppState {
   setMaxSpice: (n: number) => void;
   setLibrarySearch: (q: string) => void;
   setTropeFilter: (t: string | null) => void;
+  setShelfSort: (s: AppState["shelfSort"]) => void;
+  setAdvFilters: (f: Partial<AppState["advFilters"]>) => void;
+  setPalWaveSize: (n: number) => void;
+  setShelfColor: (shelf: string, color: string) => void;
+  setYearGoal: (n: number) => void;
   importGoodreads: (csv: string) => void;
+  importKindle: (txt: string) => void;
 
   setQuery: (q: string) => void;
   runSearch: () => Promise<void>;
@@ -115,6 +132,9 @@ interface AppState {
   addList: () => void;
   deleteList: (name: string) => void;
   setNewList: (v: string) => void;
+  generateShareCode: (listName: string) => void;
+
+  addJournalEntry: (e: Omit<JournalEntry, "id" | "date">) => void;
 
   openConvo: (id: string) => void;
   setDraft: (v: string) => void;
@@ -157,6 +177,14 @@ export const useStore = create<AppState>((set, get) => ({
   maxSpice: 5,
   librarySearch: "",
   tropeFilter: null,
+  shelfSort: "default",
+  advFilters: { minRating: 0, minPages: 0, maxPages: 9999, lang: "", year: "" },
+  palWaveSize: 0,
+
+  shelfColors: {},
+  yearGoal: 0,
+
+  journalEntries: [],
 
   query: "",
   results: [],
@@ -291,6 +319,11 @@ export const useStore = create<AppState>((set, get) => ({
   setMaxSpice: (n) => set((s) => ({ maxSpice: s.maxSpice === n ? 5 : n })),
   setLibrarySearch: (q) => set({ librarySearch: q }),
   setTropeFilter: (t) => set((s) => ({ tropeFilter: s.tropeFilter === t ? null : t })),
+  setShelfSort: (s) => set({ shelfSort: s }),
+  setAdvFilters: (f) => set((s) => ({ advFilters: { ...s.advFilters, ...f } })),
+  setPalWaveSize: (n) => set({ palWaveSize: n }),
+  setShelfColor: (shelf, color) => set((s) => ({ shelfColors: { ...s.shelfColors, [shelf]: color } })),
+  setYearGoal: (n) => set({ yearGoal: n }),
 
   importGoodreads(csv) {
     const lines = csv.split("\n").filter(Boolean);
@@ -423,6 +456,45 @@ export const useStore = create<AppState>((set, get) => ({
     get().ping(`« ${r.title} » est dans ta PAL. Ajoute le piment et les tropes 🌶`);
   },
 
+  // ── Journal ──
+  addJournalEntry({ bookId, pagesRead, note }) {
+    const entry: JournalEntry = {
+      id: `j${Date.now()}`,
+      date: new Date().toISOString().slice(0, 10),
+      bookId, pagesRead, note,
+    };
+    set((s) => ({ journalEntries: [entry, ...s.journalEntries] }));
+  },
+
+  // ── Kindle import ──
+  importKindle(txt) {
+    const SEPARATOR = "==========";
+    const clips = txt.split(SEPARATOR).map((s) => s.trim()).filter(Boolean);
+    const { books } = get();
+    let imported = 0;
+    const updates: Record<string, typeof books[0]["pageNotes"]> = {};
+    for (const clip of clips) {
+      const lines = clip.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length < 3) continue;
+      const titleLine = lines[0];
+      const metaLine = lines[1] || "";
+      const text = lines.slice(2).join(" ").trim();
+      if (!text) continue;
+      const pageMatch = metaLine.match(/page\s+(\d+)/i) || metaLine.match(/position\s+(\d+)/i);
+      const page = pageMatch ? parseInt(pageMatch[1], 10) : 0;
+      const book = books.find((b) => titleLine.toLowerCase().includes(b.title.toLowerCase().slice(0, 12)));
+      if (!book) continue;
+      if (!updates[book.id]) updates[book.id] = [...(book.pageNotes || [])];
+      updates[book.id]!.push({ page, text, date: new Date().toISOString().slice(0, 10) });
+      imported++;
+    }
+    if (!imported) { get().ping("Aucun surlignage reconnu dans ce fichier."); return; }
+    Object.entries(updates).forEach(([id, pageNotes]) => {
+      get().patchBook(id, (b) => ({ ...b, pageNotes: pageNotes ?? [] }));
+    });
+    get().ping(`${imported} surlignage(s) Kindle importé(s) 📖`);
+  },
+
   // ── Lists ──
   setNewList: (v) => set({ newList: v }),
 
@@ -445,6 +517,17 @@ export const useStore = create<AppState>((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entry),
     }).catch(() => {});
+  },
+
+  generateShareCode(listName) {
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+    set((s) => ({ lists: s.lists.map((l) => l.name === listName ? { ...l, shareCode: code } : l) }));
+    fetch(`/api/lists/${encodeURIComponent(listName)}/share`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shareCode: code }),
+    }).catch(() => {});
+    get().ping(`Code de partage : ${code}`);
   },
 
   // ── Messages ──

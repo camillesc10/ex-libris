@@ -4,7 +4,7 @@ import { useStore } from "@/store";
 const DEFAULT_SHELVES = new Set(["En cours", "PAL", "Déjà lu", "En pause", "À relire", "Abandonné"]);
 
 export default function ListsScreen() {
-  const { books, lists, newList, setNewList, addList, deleteList, openBook } = useStore();
+  const { books, lists, newList, setNewList, addList, deleteList, openBook, generateShareCode } = useStore();
 
   return (
     <div style={{ padding: "30px 38px" }} className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]">
@@ -72,7 +72,33 @@ export default function ListsScreen() {
                   </button>
                 )}
               </div>
-              <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 16 }}>{l.desc}</div>
+              <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: l.shareCode ? 8 : 16 }}>{l.desc}</div>
+              {/* Share code (#34) */}
+              {!isDefault && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                  {l.shareCode ? (
+                    <>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Code&nbsp;:</span>
+                      <code style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".16em", color: "var(--accent)", background: "var(--soft)", padding: "3px 8px", borderRadius: 6 }}>
+                        {l.shareCode}
+                      </code>
+                      <button
+                        onClick={() => generateShareCode(l.name)}
+                        style={{ fontSize: 11, color: "var(--muted)", padding: "3px 8px", borderRadius: 6, border: "1px solid var(--line)", background: "transparent" }}
+                      >
+                        Regénérer
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => generateShareCode(l.name)}
+                      style={{ fontSize: 12, color: "var(--accent)", padding: "4px 10px", borderRadius: 7, border: "1px solid var(--accent)", background: "transparent" }}
+                    >
+                      Partager la liste
+                    </button>
+                  )}
+                </div>
+              )}
               <div style={{ display: "flex", gap: 10, alignItems: "flex-end", minHeight: 104 }}>
                 {listBooks.length === 0 ? (
                   <div style={{ fontSize: 12.5, color: "var(--muted)", fontStyle: "italic" }}>

@@ -1,5 +1,5 @@
 import { pgTable, text, integer, jsonb } from "drizzle-orm/pg-core";
-import type { Platform } from "@/types";
+import type { Platform, PageNote } from "@/types";
 
 export const books = pgTable("books", {
   id: text("id").primaryKey(),
@@ -23,12 +23,20 @@ export const books = pgTable("books", {
   finishedAt: text("finished_at"),
   series: text("series"),
   seriesNum: integer("series_num"),
+  pageNotes: jsonb("page_notes").$type<PageNote[]>().default([]),
+  pros: text("pros").default(""),
+  cons: text("cons").default(""),
+  quote: text("quote").default(""),
+  dnfReason: text("dnf_reason").default(""),
+  relatedBooks: jsonb("related_books").$type<string[]>().default([]),
+  reminderDate: text("reminder_date"),
 });
 
 export const lists = pgTable("lists", {
   name: text("name").primaryKey(),
   dot: text("dot").notNull(),
   desc: text("desc").default(""),
+  shareCode: text("share_code"),
 });
 
 export const users = pgTable("users", {
