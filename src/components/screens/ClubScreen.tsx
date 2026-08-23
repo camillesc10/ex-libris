@@ -147,11 +147,14 @@ export default function ClubScreen() {
                     borderLeft: "3px solid rgba(224,184,74,.7)",
                     background: book.bg, color: book.ink,
                     fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 8.5,
-                    padding: "5px 4px", lineHeight: 1.2, textAlign: "left",
+                    padding: book.coverUrl ? 0 : "5px 4px", lineHeight: 1.2, textAlign: "left",
                     boxShadow: "0 6px 14px -8px rgba(0,0,0,.5)",
+                    overflow: "hidden", position: "relative",
                   }}
                 >
-                  {book.title}
+                  {book.coverUrl
+                    ? <img src={book.coverUrl} alt={book.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    : book.title}
                 </button>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{

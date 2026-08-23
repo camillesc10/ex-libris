@@ -113,16 +113,19 @@ export default function ListsScreen() {
                       style={{
                         flexShrink: 0, width: 66, height: 98,
                         borderRadius: "3px 8px 8px 3px",
-                        padding: "9px 8px", textAlign: "left",
+                        padding: b.coverUrl ? 0 : "9px 8px", textAlign: "left",
                         fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 11, lineHeight: 1.15,
                         background: b.bg, color: b.ink,
                         boxShadow: "0 8px 16px -10px rgba(51,41,31,.5)",
                         transition: "transform .18s ease",
                         overflow: "hidden",
                         display: "block",
+                        position: "relative",
                       }}
                     >
-                      {b.title}
+                      {b.coverUrl
+                        ? <img src={b.coverUrl} alt={b.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                        : b.title}
                     </button>
                   ))
                 )}
