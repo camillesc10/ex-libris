@@ -30,6 +30,7 @@ export const books = pgTable("books", {
   dnfReason: text("dnf_reason").default(""),
   relatedBooks: jsonb("related_books").$type<string[]>().default([]),
   reminderDate: text("reminder_date"),
+  coverUrl: text("cover_url"),
 });
 
 export const lists = pgTable("lists", {
