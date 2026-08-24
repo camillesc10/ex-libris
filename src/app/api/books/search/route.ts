@@ -359,7 +359,16 @@ export async function GET(req: NextRequest) {
   const isbnDigits = q.replace(/[-\s]/g, "");
   const googleQuery = isbn ? `isbn:${isbnDigits}` : q;
 
-  // 1. Google Books
+  // 1. Hardcover (source principale)
+  if (isbn) {
+    const hcBook = await fetchHardcoverByIsbn(isbnDigits);
+    if (hcBook) return NextResponse.json({ items: [hcBook], source: "hardcover" });
+  } else {
+    const hcItems = await fetchHardcover(q);
+    if (hcItems.length) return NextResponse.json({ items: hcItems, source: "hardcover" });
+  }
+
+  // 2. Google Books
   try {
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(googleQuery)}&maxResults=12&printType=books`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
@@ -370,7 +379,7 @@ export async function GET(req: NextRequest) {
     }
   } catch { /* fall through */ }
 
-  // 2. Open Library
+  // 3. Open Library
   if (isbn) {
     const book = await fetchOLByIsbn(isbnDigits);
     if (book) return NextResponse.json({ items: [book], source: "openlibrary" });
@@ -386,26 +395,17 @@ export async function GET(req: NextRequest) {
     } catch { /* fall through */ }
   }
 
-  // 3. BnF (Bibliothèque nationale de France)
+  // 4. BnF (Bibliothèque nationale de France)
   const bnfItems = await fetchBnF(isbn ? isbnDigits : q, isbn);
   if (bnfItems.length) return NextResponse.json({ items: bnfItems, source: "bnf" });
 
-  // 4. inventaire.io
+  // 5. inventaire.io
   if (isbn) {
     const invBook = await fetchInventaireByIsbn(isbnDigits);
     if (invBook) return NextResponse.json({ items: [invBook], source: "inventaire" });
   } else {
     const invItems = await fetchInventaireSearch(q);
     if (invItems.length) return NextResponse.json({ items: invItems, source: "inventaire" });
-  }
-
-  // 5. Hardcover
-  if (isbn) {
-    const hcBook = await fetchHardcoverByIsbn(isbnDigits);
-    if (hcBook) return NextResponse.json({ items: [hcBook], source: "hardcover" });
-  } else {
-    const hcItems = await fetchHardcover(q);
-    if (hcItems.length) return NextResponse.json({ items: hcItems, source: "hardcover" });
   }
 
   console.error("[Books search] No results from any source for:", q);
