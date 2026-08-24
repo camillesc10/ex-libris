@@ -66,12 +66,14 @@ export default function BottomNav() {
       className="hidden max-[820px]:flex"
       style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
-        display: "flex", alignItems: "stretch",
+        alignItems: "stretch",
         background: "color-mix(in srgb, var(--surface) 94%, transparent)",
         backdropFilter: "blur(14px)",
         borderTop: "1px solid var(--line)",
         padding: "10px 12px calc(26px + env(safe-area-inset-bottom))",
         gap: 4,
+        WebkitTransform: "translateZ(0)",
+        transform: "translateZ(0)",
       }}
     >
       {TABS.map((tab) => {

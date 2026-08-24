@@ -1,12 +1,6 @@
 "use client";
 import { useRef } from "react";
 import { useStore } from "@/store";
-import type { Theme } from "@/types";
-
-const THEME_OPTIONS: { value: Theme; label: string; desc: string }[] = [
-  { value: "constelle", label: "Nuit constellée", desc: "Fond sombre, or et étoiles" },
-  { value: "velin", label: "Vélin", desc: "Fond crème, tons chauds" },
-];
 
 const STAT_LINKS = [
   { label: "Mes collections", screen: "lists" as const },
@@ -16,8 +10,8 @@ const STAT_LINKS = [
 
 export default function MeScreen() {
   const {
-    user, theme, yearGoal, books, journalEntries,
-    setTheme, setYearGoal, navigate, logout, importGoodreads,
+    user, yearGoal, books, journalEntries,
+    setYearGoal, navigate, logout, importGoodreads,
   } = useStore();
 
   const goodreadsRef = useRef<HTMLInputElement>(null);
@@ -128,42 +122,6 @@ export default function MeScreen() {
             <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 4 }}>{label}</div>
           </div>
         ))}
-      </div>
-
-      {/* Theme picker */}
-      <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: "16px 18px", marginBottom: 20 }}>
-        <div style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 12 }}>
-          Ambiance
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {THEME_OPTIONS.map((opt) => {
-            const active = theme === opt.value;
-            return (
-              <button
-                key={opt.value}
-                onClick={() => setTheme(opt.value)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                  borderRadius: 12, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`,
-                  background: active ? "var(--soft)" : "transparent",
-                  textAlign: "left", cursor: "pointer",
-                }}
-              >
-                <span style={{
-                  width: 12, height: 12, borderRadius: "50%", flexShrink: 0,
-                  background: active ? "var(--accent)" : "var(--line)",
-                  border: active ? "none" : "2px solid var(--line)",
-                }} />
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: active ? 600 : 400, color: active ? "var(--accent)" : "var(--ink)" }}>
-                    {opt.label}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{opt.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Nav links */}
