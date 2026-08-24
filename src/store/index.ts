@@ -482,6 +482,15 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addFromApi(r) {
+    const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+    const existing = get().books.find(
+      (b) => norm(b.title) === norm(r.title) && norm(b.author) === norm(r.author)
+    );
+    if (existing) {
+      get().openBook(existing.id);
+      get().ping(`« ${r.title} » est déjà dans ta bibliothèque.`);
+      return;
+    }
     const i = get().books.length;
     const [bg, ink] = COVER_PALETTE[i % COVER_PALETTE.length];
     const nb: Book = {

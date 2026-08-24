@@ -5,8 +5,12 @@ import { COVER_PALETTE } from "@/store/data";
 import GoodreadsImport from "../GoodreadsImport";
 import IsbnScanner from "../IsbnScanner";
 
+function normalize(s: string) {
+  return s.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+}
+
 export default function SearchScreen() {
-  const { results, searching, source, added, addFromApi, runSearch, setQuery, query } = useStore();
+  const { results, searching, source, added, books, addFromApi, runSearch, setQuery, query } = useStore();
   const [scanOpen, setScanOpen] = useState(false);
   const [isbnDraft, setIsbnDraft] = useState("");
 
@@ -132,6 +136,9 @@ export default function SearchScreen() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
         {results.map((r, i) => {
           const isAdded = added.includes(r.key);
+          const inLibrary = !isAdded && books.some(
+            (b) => normalize(b.title) === normalize(r.title) && normalize(b.author) === normalize(r.author)
+          );
           const [bg, ink] = COVER_PALETTE[i % COVER_PALETTE.length];
           const coverStyle: React.CSSProperties = {
             position: "relative", width: 82, flexShrink: 0, height: 122,
@@ -162,17 +169,17 @@ export default function SearchScreen() {
                   {r.snippet}
                 </div>
                 <button
-                  onClick={() => !isAdded && addFromApi(r)}
+                  onClick={() => !isAdded && !inLibrary && addFromApi(r)}
                   style={{
                     marginTop: 12, alignSelf: "flex-start", padding: "8px 13px",
                     borderRadius: 10, fontSize: 12.5, fontWeight: 600,
-                    background: isAdded ? "var(--surface2)" : "var(--soft)",
-                    color: isAdded ? "var(--muted)" : "var(--accent)",
+                    background: (isAdded || inLibrary) ? "var(--surface2)" : "var(--soft)",
+                    color: (isAdded || inLibrary) ? "var(--muted)" : "var(--accent)",
                     transition: "all .12s",
-                    cursor: isAdded ? "default" : "pointer",
+                    cursor: (isAdded || inLibrary) ? "default" : "pointer",
                   }}
                 >
-                  {isAdded ? "Ajouté ✓" : "Ajouter à ma bibliothèque"}
+                  {isAdded ? "Ajouté ✓" : inLibrary ? "Déjà dans ta bibliothèque" : "Ajouter à ma bibliothèque"}
                 </button>
               </div>
             </div>
