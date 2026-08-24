@@ -1,4 +1,4 @@
-import { pgTable, text, integer, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, real, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import type { Platform, PageNote } from "@/types";
 
 export const books = pgTable("books", {
@@ -22,7 +22,7 @@ export const books = pgTable("books", {
   startedAt: text("started_at"),
   finishedAt: text("finished_at"),
   series: text("series"),
-  seriesNum: integer("series_num"),
+  seriesNum: real("series_num"),
   pageNotes: jsonb("page_notes").$type<PageNote[]>().default([]),
   pros: text("pros").default(""),
   cons: text("cons").default(""),

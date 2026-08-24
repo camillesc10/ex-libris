@@ -80,13 +80,21 @@ function mapOpenLibrary(docs: OLDoc[]): GoogleBookResult[] {
   });
 }
 
+function isIsbn(q: string) {
+  const digits = q.replace(/[-\s]/g, "");
+  return /^\d{10}$/.test(digits) || /^\d{13}$/.test(digits);
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") ?? "";
   if (!q.trim()) return NextResponse.json({ items: [] });
 
+  const isbn = isIsbn(q);
+  const googleQuery = isbn ? `isbn:${q.replace(/[-\s]/g, "")}` : q;
+
   // Try Google Books first
   try {
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12&printType=books`;
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(googleQuery)}&maxResults=12&printType=books`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (res.ok) {
       const data = await res.json();
@@ -100,7 +108,10 @@ export async function GET(req: NextRequest) {
 
   // Fallback: Open Library
   try {
-    const url = `https://openlibrary.org/search.json?limit=12&q=${encodeURIComponent(q)}`;
+    const olParams = isbn
+      ? `isbn=${encodeURIComponent(q.replace(/[-\s]/g, ""))}&limit=12`
+      : `q=${encodeURIComponent(q)}&limit=12`;
+    const url = `https://openlibrary.org/search.json?${olParams}`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) throw new Error(`OL ${res.status}`);
     const data = await res.json();

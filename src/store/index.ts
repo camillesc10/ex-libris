@@ -513,6 +513,8 @@ export const useStore = create<AppState>((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entry),
     }).catch(() => {});
+    const book = get().books.find((b) => b.id === bookId);
+    if (book) get().updatePage(bookId, book.page + pagesRead);
   },
 
   // ── Club ──
