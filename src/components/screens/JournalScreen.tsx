@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useStore } from "@/store";
+import TimelineScreen from "./TimelineScreen";
 
 export default function JournalScreen() {
   const { books, journalEntries, addJournalEntry } = useStore();
@@ -10,6 +11,7 @@ export default function JournalScreen() {
   const [bookId, setBookId] = useState<string>(booksEnCours[0]?.id ?? "");
   const [pages, setPages] = useState("");
   const [note, setNote] = useState("");
+  const [mobileTab, setMobileTab] = useState<"fil" | "chronologie">("fil");
 
   const totalPages = journalEntries.reduce((sum, e) => sum + e.pagesRead, 0);
 
@@ -26,7 +28,47 @@ export default function JournalScreen() {
       style={{ padding: "30px 38px" }}
       className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]"
     >
+      {/* Mobile title */}
+      <h1
+        className="hidden max-[820px]:block"
+        style={{
+          fontFamily: "var(--font-cinzel, Cinzel, serif)",
+          fontWeight: 400, fontSize: 25, letterSpacing: ".02em",
+          margin: "0 0 20px", paddingTop: 10,
+        }}
+      >
+        Journal
+      </h1>
+
+      {/* Mobile segmented control */}
+      <div
+        className="hidden max-[820px]:flex"
+        style={{
+          display: "flex", gap: 0, marginBottom: 24,
+          background: "var(--surface)", borderRadius: 12, padding: 4,
+          border: "1px solid var(--line)",
+        }}
+      >
+        {(["fil", "chronologie"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setMobileTab(tab)}
+            style={{
+              flex: 1, padding: "8px 0", borderRadius: 9, fontSize: 13,
+              fontWeight: mobileTab === tab ? 600 : 400,
+              background: mobileTab === tab ? "var(--soft)" : "transparent",
+              color: mobileTab === tab ? "var(--accent)" : "var(--muted)",
+              border: "none", cursor: "pointer", transition: "all .15s",
+            }}
+          >
+            {tab === "fil" ? "Au fil des jours" : "Chronologie"}
+          </button>
+        ))}
+      </div>
+
+      {/* Desktop title */}
       <h2
+        className="max-[820px]:hidden"
         style={{
           fontFamily: "var(--font-cinzel, Cinzel, serif)",
           fontWeight: 400,
@@ -37,6 +79,16 @@ export default function JournalScreen() {
       >
         Journal de lecture
       </h2>
+
+      {/* Chronologie tab (mobile only) */}
+      {mobileTab === "chronologie" && (
+        <div className="max-[820px]:block hidden">
+          <TimelineScreen />
+        </div>
+      )}
+
+      {/* Journal feed (always on desktop, conditionally on mobile) */}
+      <div className={mobileTab === "chronologie" ? "max-[820px]:hidden" : ""}>
 
       {/* ── Add-entry form ── */}
       <div
@@ -301,6 +353,7 @@ export default function JournalScreen() {
           );
         })}
       </div>
+      </div>{/* end journal feed wrapper */}
     </div>
   );
 }
