@@ -525,13 +525,18 @@ function BookSheetContent({ book }: { book: Book }) {
                 </div>
               )}
 
-              {/* Series + dates */}
+              {/* Saga */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
-                <div style={labelStyle}>Saga & dates</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, marginBottom: 12 }}>
+                <div style={labelStyle}>Saga</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
                   <input value={book.series || ""} onChange={(e) => patch((b) => ({ ...b, series: e.target.value || undefined }))} placeholder="Nom de la saga (ex. ACOTAR)" style={inputStyle} />
                   <input type="text" inputMode="decimal" value={book.seriesNum ?? ""} onChange={(e) => { const v = e.target.value.replace(",", "."); patch((b) => ({ ...b, seriesNum: v && !isNaN(parseFloat(v)) ? parseFloat(v) : undefined })); }} placeholder="Tome" style={{ width: 72, padding: "9px 11px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 13, outline: "none" }} />
                 </div>
+              </div>
+
+              {/* Dates de lecture */}
+              <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
+                <div style={labelStyle}>Dates de lecture</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Commencé le</div>
