@@ -85,12 +85,52 @@ function isIsbn(q: string) {
   return /^\d{10}$/.test(digits) || /^\d{13}$/.test(digits);
 }
 
+// Open Library Books API — dedicated ISBN lookup, more reliable than search index
+async function fetchOLByIsbn(isbn: string): Promise<GoogleBookResult | null> {
+  try {
+    const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: Record<string, any> = await res.json();
+    const key = `ISBN:${isbn}`;
+    const book = data[key];
+    if (!book) return null;
+
+    const cover: string | null =
+      book.cover?.large ?? book.cover?.medium ?? book.cover?.small ?? null;
+    const authors: string = (book.authors ?? []).map((a: { name: string }) => a.name).join(", ");
+    const year: string = book.publish_date
+      ? String(book.publish_date).replace(/\D.*/, "").slice(0, 4)
+      : "";
+    const pages: number = book.number_of_pages ?? 0;
+    const isbn13: string | null =
+      book.identifiers?.isbn_13?.[0] ?? book.identifiers?.isbn_10?.[0] ?? isbn;
+
+    return {
+      id: key,
+      title: book.title ?? "",
+      author: authors,
+      pages,
+      cover,
+      publisher: (book.publishers ?? []).map((p: { name: string }) => p.name).join(", "),
+      year,
+      lang: "FR",
+      snippet: book.excerpts?.[0]?.text?.slice(0, 200) ?? "",
+      isbn: isbn13,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") ?? "";
   if (!q.trim()) return NextResponse.json({ items: [] });
 
   const isbn = isIsbn(q);
-  const googleQuery = isbn ? `isbn:${q.replace(/[-\s]/g, "")}` : q;
+  const isbnDigits = q.replace(/[-\s]/g, "");
+  const googleQuery = isbn ? `isbn:${isbnDigits}` : q;
 
   // Try Google Books first
   try {
@@ -101,17 +141,19 @@ export async function GET(req: NextRequest) {
       const items = mapGoogleBooks(data.items ?? []);
       if (items.length) return NextResponse.json({ items, source: "google" });
     }
-    // 429 or empty — fall through to Open Library
   } catch {
-    // network error — fall through
+    // fall through
   }
 
-  // Fallback: Open Library
+  // ISBN: use Open Library Books API (dedicated endpoint, not search index)
+  if (isbn) {
+    const book = await fetchOLByIsbn(isbnDigits);
+    if (book) return NextResponse.json({ items: [book], source: "openlibrary" });
+  }
+
+  // Text search: Open Library search index
   try {
-    const olParams = isbn
-      ? `isbn=${encodeURIComponent(q.replace(/[-\s]/g, ""))}&limit=12`
-      : `q=${encodeURIComponent(q)}&limit=12`;
-    const url = `https://openlibrary.org/search.json?${olParams}`;
+    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=12`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) throw new Error(`OL ${res.status}`);
     const data = await res.json();
