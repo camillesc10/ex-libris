@@ -11,6 +11,7 @@ export type GoogleBookResult = {
   lang: string;
   snippet: string;
   isbn: string | null;
+  releaseDate?: string;
 };
 
 type OLDoc = {
@@ -284,11 +285,13 @@ async function fetchHardcoverByIsbn(isbn: string): Promise<GoogleBookResult | nu
         editions(where: {isbn_13: {_eq: $isbn}}, limit: 1) {
           isbn_13
           pages
+          release_date
           book {
             id
             title
             description
             release_year
+            release_date
             image { url }
             contributions { author { name } }
           }
@@ -300,6 +303,8 @@ async function fetchHardcoverByIsbn(isbn: string): Promise<GoogleBookResult | nu
     const book = edition.book;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const author = (book.contributions ?? []).map((c: any) => c.author?.name).filter(Boolean).join(", ");
+    const releaseDate: string | undefined =
+      (edition.release_date ?? book.release_date)?.slice(0, 10) || undefined;
     return {
       id: `hc:${book.id}`,
       title: book.title ?? "",
@@ -311,6 +316,7 @@ async function fetchHardcoverByIsbn(isbn: string): Promise<GoogleBookResult | nu
       lang: "FR",
       snippet: (book.description ?? "").slice(0, 200),
       isbn: edition.isbn_13 ?? isbn,
+      releaseDate,
     };
   } catch {
     return null;
@@ -331,6 +337,8 @@ async function fetchHardcover(q: string): Promise<GoogleBookResult[]> {
     const hits: any[] = data?.data?.search?.results?.hits ?? [];
     return hits.map((hit, i) => {
       const doc = hit.document ?? {};
+      const releaseDate: string | undefined =
+        (doc.release_date ?? doc.default_physical_edition?.release_date)?.slice(0, 10) || undefined;
       return {
         id: `hc:${doc.id ?? i}`,
         title: doc.title ?? "",
@@ -342,6 +350,7 @@ async function fetchHardcover(q: string): Promise<GoogleBookResult[]> {
         lang: "FR",
         snippet: (doc.description ?? "").slice(0, 200),
         isbn: doc.default_physical_edition?.isbn_13 ?? null,
+        releaseDate,
       };
     }).filter(b => b.title);
   } catch {

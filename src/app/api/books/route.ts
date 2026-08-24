@@ -19,7 +19,7 @@ export async function GET() {
           userBooksTable,
           and(eq(userBooksTable.bookId, booksTable.id), eq(userBooksTable.userId, userId))
         );
-      if (rows.length > 0) {
+      {
         const result = rows.map(({ books: b, user_books: ub }) => ({
           id: b.id,
           title: b.title,
@@ -56,9 +56,12 @@ export async function GET() {
       }
     }
 
-    // Fallback: return books directly (pre-migration or no userId)
-    const rows = await db.select().from(booksTable);
-    return NextResponse.json(rows);
+    // Fallback uniquement si non authentifié (pré-migration)
+    if (!userId) {
+      const rows = await db.select().from(booksTable);
+      return NextResponse.json(rows);
+    }
+    return NextResponse.json([]);
   } catch {
     return NextResponse.json([]);
   }

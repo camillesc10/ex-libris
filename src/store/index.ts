@@ -343,7 +343,11 @@ export const useStore = create<AppState>((set, get) => ({
 
   deleteBook(id) {
     set((s) => ({ books: s.books.filter((b) => b.id !== id), open: s.open === id ? null : s.open }));
-    fetch(`/api/books/${id}`, { method: "DELETE" }).catch(console.error);
+    fetch(`/api/books/${id}`, { method: "DELETE" })
+      .then(async (r) => {
+        if (!r.ok) console.error(`[deleteBook] DELETE /api/books/${id} ${r.status}:`, await r.text());
+      })
+      .catch(console.error);
   },
 
   addPlatform(bookId, raw) {
@@ -464,7 +468,7 @@ export const useStore = create<AppState>((set, get) => ({
       const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
       const j = await res.json();
       const source = j.source === "openlibrary" ? "Open Library" : "Google Books";
-      const rs: SearchResult[] = (j.items || []).map((it: { id: string; title: string; author: string; year: string; snippet: string; cover: string | null; pages: number; lang: string; isbn?: string }) => ({
+      const rs: SearchResult[] = (j.items || []).map((it: { id: string; title: string; author: string; year: string; snippet: string; cover: string | null; pages: number; lang: string; isbn?: string; releaseDate?: string }) => ({
         key: it.id,
         title: it.title || "Sans titre",
         author: it.author || "Auteur inconnu",
@@ -474,6 +478,7 @@ export const useStore = create<AppState>((set, get) => ({
         pages: it.pages || 320,
         lang: it.lang || "FR",
         isbn: it.isbn ?? undefined,
+        releaseDate: it.releaseDate,
       }));
       set({ results: rs, searching: false, source });
     } catch {
@@ -499,6 +504,7 @@ export const useStore = create<AppState>((set, get) => ({
       tropes: [], lists: ["PAL"], resume: r.snippet, comment: "",
       bg, ink, platforms: [{ name: "Kobo", langs: "FR, EN" }],
       ...(r.cover ? { coverUrl: r.cover } : {}),
+      ...(r.releaseDate ? { releaseDate: r.releaseDate } : {}),
     };
     set((s) => ({ books: [...s.books, nb], added: [...s.added, r.key], open: nb.id }));
     fetch("/api/books", {

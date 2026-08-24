@@ -106,4 +106,5 @@ export interface SearchResult {
   pages: number;
   lang: string;
   isbn?: string;
+  releaseDate?: string;
 }
