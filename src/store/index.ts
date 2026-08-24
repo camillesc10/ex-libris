@@ -328,18 +328,17 @@ export const useStore = create<AppState>((set, get) => ({
 
   // ── Library ──
   patchBook(id, fn) {
-    set((s) => {
-      const updated = s.books.map((b) => (b.id === id ? fn(b) : b));
-      const book = updated.find((b) => b.id === id);
-      if (book) {
-        fetch(`/api/books/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(book),
-        }).catch(() => {});
-      }
-      return { books: updated };
-    });
+    const current = get().books.find((b) => b.id === id);
+    if (!current) return;
+    const updated = fn(current);
+    set((s) => ({ books: s.books.map((b) => (b.id === id ? updated : b)) }));
+    fetch(`/api/books/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated),
+    }).then(async (r) => {
+      if (!r.ok) console.error(`[patchBook] PATCH /api/books/${id} ${r.status}:`, await r.text());
+    }).catch((e) => console.error("[patchBook] réseau:", e));
   },
 
   deleteBook(id) {
