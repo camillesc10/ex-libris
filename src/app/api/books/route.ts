@@ -50,6 +50,7 @@ export async function GET() {
           dnfReason: ub.dnfReason ?? "",
           relatedBooks: ub.relatedBooks ?? [],
           reminderDate: ub.reminderDate,
+          releaseDate: ub.releaseDate,
         }));
         return NextResponse.json(result);
       }
@@ -96,6 +97,7 @@ export async function POST(req: Request) {
       dnfReason: rest.dnfReason ?? "",
       relatedBooks: rest.relatedBooks ?? [],
       reminderDate: rest.reminderDate,
+      releaseDate: rest.releaseDate,
     });
     return NextResponse.json(book, { status: 201 });
   } catch (e) {

@@ -101,6 +101,7 @@ export const userBooks = pgTable("user_books", {
   dnfReason: text("dnf_reason").default(""),
   relatedBooks: jsonb("related_books").$type<string[]>().default([]),
   reminderDate: text("reminder_date"),
+  releaseDate: text("release_date"),
 }, (t) => [uniqueIndex("user_books_unique_idx").on(t.userId, t.bookId)]);
 
 export const userPrefs = pgTable("user_prefs", {
