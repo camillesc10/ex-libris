@@ -49,17 +49,22 @@ export default function TimelineScreen() {
           marginBottom: 28,
         }}
       >
-        <h2
-          style={{
-            fontFamily: "var(--font-cinzel, Cinzel, serif)",
-            fontWeight: 400,
-            fontSize: 20,
-            margin: 0,
-            letterSpacing: ".02em",
-          }}
-        >
-          Chronologie
-        </h2>
+        <div>
+          <h2
+            style={{
+              fontFamily: "var(--font-cinzel, Cinzel, serif)",
+              fontWeight: 400,
+              fontSize: 20,
+              margin: "0 0 4px",
+              letterSpacing: ".02em",
+            }}
+          >
+            Chronologie
+          </h2>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>
+            Les livres apparaissent ici selon leur date «&nbsp;Terminé le&nbsp;» (fiche du livre → Dates).
+          </div>
+        </div>
 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {years.map((y) => (
