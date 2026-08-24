@@ -1,4 +1,4 @@
-import { pgTable, text, integer, real, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, real, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import type { Platform, PageNote } from "@/types";
 
 export const books = pgTable("books", {
@@ -77,6 +77,31 @@ export const clubProposals = pgTable("club_proposals", {
   votes: integer("votes").default(1),
   votedByMe: boolean("voted_by_me").default(false),
 });
+
+export const userBooks = pgTable("user_books", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  bookId: text("book_id").notNull(),
+  spice: integer("spice").default(0),
+  rating: integer("rating").default(0),
+  page: integer("page").default(0),
+  tropes: jsonb("tropes").$type<string[]>().default([]),
+  lists: jsonb("lists").$type<string[]>().default([]),
+  resume: text("resume").default(""),
+  comment: text("comment").default(""),
+  bg: text("bg").notNull().default("#1E1B4B"),
+  ink: text("ink").notNull().default("#E8E3F0"),
+  platforms: jsonb("platforms").$type<Platform[]>().default([]),
+  startedAt: text("started_at"),
+  finishedAt: text("finished_at"),
+  pageNotes: jsonb("page_notes").$type<PageNote[]>().default([]),
+  pros: text("pros").default(""),
+  cons: text("cons").default(""),
+  quote: text("quote").default(""),
+  dnfReason: text("dnf_reason").default(""),
+  relatedBooks: jsonb("related_books").$type<string[]>().default([]),
+  reminderDate: text("reminder_date"),
+}, (t) => [uniqueIndex("user_books_unique_idx").on(t.userId, t.bookId)]);
 
 export const userPrefs = pgTable("user_prefs", {
   id: text("id").primaryKey(),

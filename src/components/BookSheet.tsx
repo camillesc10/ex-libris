@@ -362,27 +362,35 @@ function BookSheetContent({ book }: { book: Book }) {
                       <button onClick={() => setShowCoverPicker(false)} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 16 }}>×</button>
                     </div>
                     <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
-                      {coverResults.map((item, i) => {
-                        const coverSrc = item.cover ?? (item.isbn ? `https://covers.openlibrary.org/b/isbn/${item.isbn}-M.jpg` : null);
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => applyCoverResult(item)}
-                            style={{ flexShrink: 0, width: 72, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                          >
-                            <div style={{ width: 72, height: 108, borderRadius: "3px 8px 8px 3px", background: "var(--surface2)", overflow: "hidden", border: "1px solid var(--line)", position: "relative", transition: "transform .12s" }}
-                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.06)"; }}
-                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
-                            >
-                              {coverSrc ? (
-                                <img src={coverSrc} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                              ) : (
-                                <div style={{ padding: "6px 5px", fontSize: 9, lineHeight: 1.2, color: "var(--ink)", fontFamily: "var(--font-cinzel, Cinzel, serif)" }}>{item.title}</div>
-                              )}
-                            </div>
-                            <div style={{ fontSize: 9.5, color: "var(--muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 72 }}>{item.title}</div>
-                          </button>
-                        );
+                      {coverResults.flatMap((item, i) => {
+                        const candidates: { url: string; label: string }[] = [];
+                        if (item.cover) candidates.push({ url: item.cover, label: item.title });
+                        if (item.isbn) {
+                          candidates.push({ url: `https://covers.openlibrary.org/b/isbn/${item.isbn}-L.jpg`, label: `OL · ${item.title}` });
+                          candidates.push({ url: `https://couverture.geobib.fr/api/v1/${item.isbn}/large`, label: `BnF · ${item.title}` });
+                          candidates.push({ url: `https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=${item.isbn}&couverture=1`, label: `BnF2 · ${item.title}` });
+                        }
+                        if (!item.cover && !item.isbn) candidates.push({ url: "", label: item.title });
+                        return candidates.map((cand, j) => (
+                          <CoverThumb
+                            key={`${i}-${j}`}
+                            url={cand.url}
+                            label={cand.label}
+                            onClick={() => {
+                              if (!cand.url) { applyCoverResult(item); return; }
+                              patch((b) => ({
+                                ...b,
+                                coverUrl: cand.url,
+                                ...(item.pages && !b.pages ? { pages: item.pages } : {}),
+                                ...(item.snippet && !b.resume ? { resume: item.snippet.slice(0, 400) + "…" } : {}),
+                                ...(item.year && !b.year ? { year: item.year } : {}),
+                                ...(item.lang && !b.lang ? { lang: item.lang } : {}),
+                              }));
+                              setShowCoverPicker(false);
+                              ping("Couverture appliquée ✓");
+                            }}
+                          />
+                        ));
                       })}
                     </div>
                   </div>
@@ -641,6 +649,36 @@ function BookSheetContent({ book }: { book: Book }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function CoverThumb({ url, label, onClick }: { url: string; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ flexShrink: 0, width: 72, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+    >
+      <div
+        style={{ width: 72, height: 108, borderRadius: "3px 8px 8px 3px", background: "var(--surface2)", overflow: "hidden", border: "1px solid var(--line)", transition: "transform .12s" }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.06)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+      >
+        {url ? (
+          <img
+            src={url}
+            alt={label}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            onError={(e) => {
+              const btn = (e.currentTarget as HTMLElement).closest("button");
+              if (btn) btn.style.display = "none";
+            }}
+          />
+        ) : (
+          <div style={{ padding: "6px 5px", fontSize: 9, lineHeight: 1.2, color: "var(--ink)", fontFamily: "var(--font-cinzel, Cinzel, serif)" }}>{label}</div>
+        )}
+      </div>
+      <div style={{ fontSize: 9.5, color: "var(--muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 72 }}>{label}</div>
+    </button>
   );
 }
 

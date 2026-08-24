@@ -29,7 +29,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 365 * 24 * 60 * 60 },
   pages: { signIn: "/" },
   secret: process.env.AUTH_SECRET,
+  callbacks: {
+    jwt({ token, user }) {
+      if (user?.id) token.userId = user.id;
+      return token;
+    },
+    session({ session, token }) {
+      if (token.userId) (session.user as { id?: string }).id = token.userId as string;
+      return session;
+    },
+  },
 });
