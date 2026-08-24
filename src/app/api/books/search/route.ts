@@ -258,6 +258,97 @@ async function fetchInventaireSearch(q: string): Promise<GoogleBookResult[]> {
   }
 }
 
+// ─── Hardcover ────────────────────────────────────────────────────────────────
+
+async function hcGraphQL(query: string, variables: Record<string, unknown>) {
+  const apiKey = process.env.HARDCOVER_API_KEY;
+  if (!apiKey) return null;
+  const res = await fetch("https://api.hardcover.app/v1/graphql", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ query, variables }),
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function fetchHardcoverByIsbn(isbn: string): Promise<GoogleBookResult | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await hcGraphQL(`
+      query($isbn: String!) {
+        editions(where: {isbn_13: {_eq: $isbn}}, limit: 1) {
+          isbn_13
+          pages
+          book {
+            id
+            title
+            description
+            release_year
+            image { url }
+            contributions { author { name } }
+          }
+        }
+      }
+    `, { isbn });
+    const edition = data?.data?.editions?.[0];
+    if (!edition?.book) return null;
+    const book = edition.book;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const author = (book.contributions ?? []).map((c: any) => c.author?.name).filter(Boolean).join(", ");
+    return {
+      id: `hc:${book.id}`,
+      title: book.title ?? "",
+      author,
+      pages: edition.pages ?? 0,
+      cover: book.image?.url ?? null,
+      publisher: "",
+      year: book.release_year ? String(book.release_year) : "",
+      lang: "FR",
+      snippet: (book.description ?? "").slice(0, 200),
+      isbn: edition.isbn_13 ?? isbn,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchHardcover(q: string): Promise<GoogleBookResult[]> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await hcGraphQL(`
+      query($q: String!) {
+        search(query: $q, query_type: "Book", per_page: 12) {
+          results
+        }
+      }
+    `, { q });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hits: any[] = data?.data?.search?.results?.hits ?? [];
+    return hits.map((hit, i) => {
+      const doc = hit.document ?? {};
+      return {
+        id: `hc:${doc.id ?? i}`,
+        title: doc.title ?? "",
+        author: (doc.author_names ?? []).join(", "),
+        pages: doc.pages ?? 0,
+        cover: doc.image?.url ?? null,
+        publisher: "",
+        year: doc.release_year ? String(doc.release_year) : "",
+        lang: "FR",
+        snippet: (doc.description ?? "").slice(0, 200),
+        isbn: doc.default_physical_edition?.isbn_13 ?? null,
+      };
+    }).filter(b => b.title);
+  } catch {
+    return [];
+  }
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -306,6 +397,15 @@ export async function GET(req: NextRequest) {
   } else {
     const invItems = await fetchInventaireSearch(q);
     if (invItems.length) return NextResponse.json({ items: invItems, source: "inventaire" });
+  }
+
+  // 5. Hardcover
+  if (isbn) {
+    const hcBook = await fetchHardcoverByIsbn(isbnDigits);
+    if (hcBook) return NextResponse.json({ items: [hcBook], source: "hardcover" });
+  } else {
+    const hcItems = await fetchHardcover(q);
+    if (hcItems.length) return NextResponse.json({ items: hcItems, source: "hardcover" });
   }
 
   console.error("[Books search] No results from any source for:", q);
