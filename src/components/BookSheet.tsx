@@ -15,8 +15,8 @@ export default function BookSheet() {
 
 function BookSheetContent({ book }: { book: Book }) {
   const {
-    layout, lists, books,
-    openBook, setLayout, patchBook, deleteBook, addPlatform, navigate, setReadBook,
+    lists, books,
+    openBook, patchBook, deleteBook, addPlatform, navigate, setReadBook,
     ping, readBook,
   } = useStore();
 
@@ -36,8 +36,7 @@ function BookSheetContent({ book }: { book: Book }) {
 
   const patch = (fn: (b: Book) => Book) => patchBook(book.id, fn);
 
-  const isColonnes = layout === "colonnes";
-  const isImmersif = layout === "immersif";
+
 
   function setSpice(n: number) { patch((b) => ({ ...b, spice: b.spice === n ? 0 : n })); }
   function setRating(n: number) {
@@ -158,8 +157,8 @@ function BookSheetContent({ book }: { book: Book }) {
 
   const isAbandoned = book.lists.includes("Abandonné");
 
-  const sheetWidth = isImmersif ? 980 : 880;
-  const sheetCols = isColonnes ? "260px 1fr" : "300px 1fr";
+  const sheetWidth = 880;
+  const sheetCols = "260px 1fr";
   const headerBg = "color-mix(in srgb, var(--bg) 88%, transparent)";
 
   return (
@@ -202,17 +201,6 @@ function BookSheetContent({ book }: { book: Book }) {
           >
             ← Retour
           </button>
-          {/* Layout switcher — desktop only */}
-          <div className="max-[820px]:!hidden" style={{ display: "flex", gap: 8 }}>
-            {(["colonnes", "immersif"] as const).map((l) => {
-              const active = layout === l;
-              return (
-                <button key={l} onClick={() => setLayout(l)} style={{ padding: "6px 13px", borderRadius: 999, fontSize: 12.5, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`, background: active ? "var(--soft)" : "transparent", color: active ? "var(--accent)" : "var(--ink)" }}>
-                  {l === "colonnes" ? "Fiche en colonnes" : "Fiche immersive"}
-                </button>
-              );
-            })}
-          </div>
           {confirmDelete ? (
             <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
               <span style={{ fontSize: 13, color: "var(--muted)" }}>Supprimer ce livre ?</span>
@@ -227,26 +215,13 @@ function BookSheetContent({ book }: { book: Book }) {
           )}
         </div>
 
-        {isImmersif && (
-          <div style={{ padding: "34px 34px 26px", background: book.bg, color: book.ink }}>
-            <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", opacity: 0.7, marginBottom: 12 }}>{book.genre} · {book.year}</div>
-            <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 40, lineHeight: 1.08, letterSpacing: ".02em", maxWidth: 620, textWrap: "pretty" }}>{book.title}</div>
-            <div style={{ fontSize: 15, marginTop: 10, opacity: 0.8 }}>{book.author}</div>
-            <div style={{ display: "flex", gap: 18, marginTop: 22, fontSize: 13.5, opacity: 0.9 }}>
-              <span>{"🌶".repeat(book.spice) || "doux"}</span>
-              <span>{"★".repeat(book.rating)}</span>
-              <span>{book.pages} pages</span>
-            </div>
-          </div>
-        )}
 
         <div style={{ padding: "30px 34px 60px" }}>
           <div style={{ display: "grid", gridTemplateColumns: sheetCols, gap: 34, alignItems: "start" }} className="max-[820px]:!grid-cols-1 max-[820px]:!gap-[22px]">
 
             {/* Left column */}
             <div>
-              {isColonnes && (
-                <div style={{ height: 300, borderRadius: "5px 14px 14px 5px", overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
+              <div style={{ height: 300, borderRadius: "5px 14px 14px 5px", overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
                   {book.coverUrl ? (
                     <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                   ) : (
@@ -256,7 +231,6 @@ function BookSheetContent({ book }: { book: Book }) {
                     </div>
                   )}
                 </div>
-              )}
 
               {/* Platforms */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
@@ -400,13 +374,11 @@ function BookSheetContent({ book }: { book: Book }) {
 
             {/* Right column */}
             <div style={{ minWidth: 0 }}>
-              {isColonnes && (
-                <div style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 22 }}>
                   <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 10 }}>{book.genre} · {book.year} · {book.lang}</div>
                   <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 30, lineHeight: 1.15, letterSpacing: ".02em", textWrap: "pretty" }}>{book.title}</div>
                   <div style={{ fontSize: 15, color: "var(--muted)", marginTop: 7 }}>{book.author}</div>
                 </div>
-              )}
 
               {/* Infos de base */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
