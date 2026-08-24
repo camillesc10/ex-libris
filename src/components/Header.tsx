@@ -22,7 +22,7 @@ export default function Header() {
         padding: "18px 38px",
         display: "flex", alignItems: "center", gap: 20,
       }}
-      className="max-[820px]:!px-[18px] max-[820px]:!py-[14px] max-[820px]:flex-wrap max-[820px]:gap-3"
+      className="max-[820px]:hidden max-[820px]:!px-[18px] max-[820px]:!py-[14px] max-[820px]:flex-wrap max-[820px]:gap-3"
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)" }}>

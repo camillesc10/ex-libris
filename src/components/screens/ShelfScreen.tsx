@@ -5,6 +5,15 @@ import { TROPES } from "@/store/data";
 import BookCover from "../BookCover";
 import type { Book } from "@/types";
 
+const STATUS_TILES = [
+  { key: "En cours", label: "En cours" },
+  { key: "PAL", label: "Ma PAL" },
+  { key: "Déjà lu", label: "Déjà lu" },
+  { key: "En pause", label: "En pause" },
+] as const;
+
+const SYSTEM_STATUSES = new Set(["En cours", "PAL", "Déjà lu", "En pause"]);
+
 const SHELF_ORDER = [
   { key: "En cours", label: "En cours de lecture", meta: "marque-pages en service" },
   { key: "PAL", label: "Pile à lire", meta: "les prochains sur la liste" },
@@ -42,10 +51,11 @@ const SHELF_COLORS = ["#8B6914", "#5C4A1E", "#6B3A2A", "#2D4A3E", "#3A3A5C", "#1
 
 export default function ShelfScreen() {
   const {
-    books, genre, maxSpice, listFilter, librarySearch, tropeFilter,
+    books, lists, genre, maxSpice, listFilter, librarySearch, tropeFilter,
     shelfSort, advFilters, palWaveSize, shelfColors,
     setGenre, setMaxSpice, setLibrarySearch, setTropeFilter,
-    setShelfSort, setAdvFilters, setPalWaveSize, setShelfColor, openBook,
+    setShelfSort, setAdvFilters, setPalWaveSize, setShelfColor, setListFilter,
+    openBook, navigate,
   } = useStore();
 
   const [showAdv, setShowAdv] = useState(false);
@@ -132,8 +142,209 @@ export default function ShelfScreen() {
 
   const waveSize = palWaveSize > 0 ? palWaveSize : 0;
 
+  const mobileCollections = lists.filter((l) => !SYSTEM_STATUSES.has(l.name));
+  const mobileFiltered = listFilter
+    ? books.filter((b) => b.lists.includes(listFilter))
+    : books.filter((b) => STATUS_TILES.some((t) => b.lists.includes(t.key)));
+
   return (
-    <div style={{ padding: "30px 38px" }} className="max-[820px]:!px-[18px] max-[820px]:!py-[22px]">
+    <div style={{ padding: "30px 38px" }} className="max-[820px]:!p-0">
+
+      {/* ── Mobile layout ── */}
+      <div className="hidden max-[820px]:block">
+        {/* Sticky header */}
+        <div style={{
+          position: "sticky", top: 0, zIndex: 20,
+          background: "color-mix(in srgb, var(--bg) 92%, transparent)",
+          backdropFilter: "blur(14px)",
+          borderBottom: "1px solid var(--line)",
+          padding: "52px 16px 12px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <h1 style={{
+              fontFamily: "var(--font-cinzel, Cinzel, serif)",
+              fontWeight: 400, fontSize: 25, letterSpacing: ".02em", margin: 0,
+            }}>
+              Mon étagère
+            </h1>
+            <button
+              onClick={() => navigate("search")}
+              aria-label="Ajouter un livre"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 14px", borderRadius: 12,
+                background: "var(--accent)", color: "#161C2F",
+                fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
+              }}
+            >
+              <span style={{ fontSize: 15 }}>⊕</span> Ajouter
+            </button>
+          </div>
+
+          {/* Status tiles */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7 }}>
+            {STATUS_TILES.map((tile) => {
+              const count = books.filter((b) => b.lists.includes(tile.key)).length;
+              const active = listFilter === tile.key;
+              return (
+                <button
+                  key={tile.key}
+                  onClick={() => setListFilter(active ? null : tile.key)}
+                  style={{
+                    padding: "10px 9px", borderRadius: 12, textAlign: "center",
+                    border: active ? "none" : "1px solid var(--line)",
+                    background: active ? "var(--accent)" : "var(--surface)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{
+                    fontSize: 18, fontWeight: 600, fontVariantNumeric: "tabular-nums",
+                    color: active ? "#161C2F" : "var(--ink)", lineHeight: 1,
+                  }}>
+                    {count}
+                  </div>
+                  <div style={{
+                    fontSize: 10.5, marginTop: 4, lineHeight: 1.2,
+                    color: active ? "rgba(22,28,47,.75)" : "var(--muted)",
+                  }}>
+                    {tile.label}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2-column book grid */}
+        <div style={{ padding: "20px 16px" }}>
+          {mobileFiltered.length === 0 ? (
+            <div style={{ fontSize: 14, color: "var(--muted)", fontStyle: "italic", textAlign: "center", marginTop: 40 }}>
+              Aucun livre dans cette liste.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px 16px" }}>
+              {mobileFiltered.map((book) => {
+                const progress = book.pages > 0 ? book.page / book.pages : 0;
+                const inProgress = book.lists.includes("En cours") && book.pages > 0;
+                return (
+                  <button
+                    key={book.id}
+                    onClick={() => openBook(book.id)}
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                  >
+                    <div style={{
+                      aspectRatio: "2/3", borderRadius: 6, overflow: "hidden",
+                      border: "1px solid rgba(224,184,74,.5)",
+                      boxShadow: "0 12px 22px -14px rgba(0,0,0,.85)",
+                      position: "relative", background: book.bg,
+                    }}>
+                      {book.coverUrl ? (
+                        <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      ) : (
+                        <div style={{ padding: "14px 12px", display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%", color: book.ink }}>
+                          <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 14, lineHeight: 1.25, letterSpacing: ".02em" }}>{book.title}</div>
+                          <div style={{ fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", opacity: 0.7 }}>{book.author}</div>
+                        </div>
+                      )}
+                      {inProgress && (
+                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "rgba(0,0,0,.3)" }}>
+                          <div style={{ height: "100%", width: `${progress * 100}%`, background: "var(--accent)" }} />
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {book.author}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Collections section */}
+          {mobileCollections.length > 0 && (
+            <div style={{ marginTop: 36 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <h2 style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontWeight: 400, fontSize: 17, letterSpacing: ".02em", margin: 0 }}>
+                  Mes collections
+                </h2>
+                <button
+                  onClick={() => navigate("lists")}
+                  style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}
+                >
+                  Gérer
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0, border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", background: "var(--surface)" }}>
+                {mobileCollections.map((col, i) => {
+                  const colBooks = books.filter((b) => b.lists.includes(col.name)).slice(0, 3);
+                  const count = books.filter((b) => b.lists.includes(col.name)).length;
+                  return (
+                    <button
+                      key={col.name}
+                      onClick={() => setListFilter(col.name)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 12, padding: "13px 16px",
+                        background: "none", border: "none", cursor: "pointer",
+                        borderBottom: i < mobileCollections.length - 1 ? "1px solid var(--line)" : "none",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ width: 10, height: 10, borderRadius: 3, background: col.dot, flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 14, color: "var(--ink)" }}>{col.name}</span>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        {colBooks.map((b, j) => (
+                          <div
+                            key={b.id}
+                            style={{
+                              width: 22, height: 33, borderRadius: 3,
+                              background: b.coverUrl ? undefined : b.bg,
+                              border: "1px solid var(--line)",
+                              marginLeft: j > 0 ? -8 : 0,
+                              overflow: "hidden", flexShrink: 0,
+                            }}
+                          >
+                            {b.coverUrl && <img src={b.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                          </div>
+                        ))}
+                      </div>
+                      <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 6 }}>{count}</span>
+                      <span style={{ color: "var(--muted)", fontSize: 14 }}>›</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Sagas + Par auteur */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 20, marginBottom: 16 }}>
+            <button
+              onClick={() => navigate("series")}
+              style={{
+                padding: "14px", borderRadius: 14, border: "1px solid var(--line)",
+                background: "var(--surface)", fontSize: 13.5, fontWeight: 500,
+                color: "var(--ink)", cursor: "pointer",
+              }}
+            >
+              Mes sagas
+            </button>
+            <button
+              onClick={() => navigate("authors")}
+              style={{
+                padding: "14px", borderRadius: 14, border: "1px solid var(--line)",
+                background: "var(--surface)", fontSize: 13.5, fontWeight: 500,
+                color: "var(--ink)", cursor: "pointer",
+              }}
+            >
+              Par auteur
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Desktop layout ── */}
+      <div className="max-[820px]:hidden" style={{ padding: "30px 38px" }}>
       {/* Search bar */}
       <div style={{ marginBottom: 14, display: "flex", gap: 10, alignItems: "center" }}>
         <input
@@ -538,6 +749,7 @@ export default function ShelfScreen() {
           </div>
         );
       })}
+      </div>{/* end desktop layout */}
     </div>
   );
 }
