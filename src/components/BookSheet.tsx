@@ -10,10 +10,11 @@ export default function BookSheet() {
   const open = useStore((s) => s.open);
   const book = useStore((s) => s.books.find((b) => b.id === s.open));
   if (!open || !book) return null;
-  return <BookSheetContent book={book} />;
+  return <BookSheetContent key={book.id} book={book} />;
 }
 
 function BookSheetContent({ book }: { book: Book }) {
+  const [seriesNumStr, setSeriesNumStr] = useState(book.seriesNum != null ? String(book.seriesNum) : "");
   const {
     lists, books,
     openBook, patchBook, deleteBook, addPlatform, navigate, setReadBook,
@@ -221,16 +222,28 @@ function BookSheetContent({ book }: { book: Book }) {
 
             {/* Left column */}
             <div>
-              <div style={{ height: 300, borderRadius: "5px 14px 14px 5px", overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
-                  {book.coverUrl ? (
-                    <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                  ) : (
-                    <div style={{ padding: "22px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
-                      <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 22, lineHeight: 1.2, letterSpacing: ".02em" }}>{book.title}</div>
-                      <div style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{book.author}</div>
-                    </div>
-                  )}
-                </div>
+              {(() => {
+                const isUnreleased = book.releaseDate && new Date(book.releaseDate) > new Date();
+                const releaseFmt = book.releaseDate ? new Date(book.releaseDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "";
+                return (
+                  <div style={{ height: 300, borderRadius: "5px 14px 14px 5px", overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
+                    {book.coverUrl ? (
+                      <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    ) : (
+                      <div style={{ padding: "22px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+                        <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 22, lineHeight: 1.2, letterSpacing: ".02em" }}>{book.title}</div>
+                        <div style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{book.author}</div>
+                      </div>
+                    )}
+                    {isUnreleased && (
+                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(14,10,6,.72)", backdropFilter: "blur(4px)", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 2 }}>
+                        <div style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", fontWeight: 700 }}>À paraître</div>
+                        <div style={{ fontSize: 12, color: "#E8E3F0" }}>{releaseFmt}</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Platforms */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
@@ -502,14 +515,26 @@ function BookSheetContent({ book }: { book: Book }) {
                 <div style={labelStyle}>Saga</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
                   <input value={book.series || ""} onChange={(e) => patch((b) => ({ ...b, series: e.target.value || undefined }))} placeholder="Nom de la saga (ex. ACOTAR)" style={inputStyle} />
-                  <input type="text" inputMode="decimal" value={book.seriesNum ?? ""} onChange={(e) => { const v = e.target.value.replace(",", "."); patch((b) => ({ ...b, seriesNum: v && !isNaN(parseFloat(v)) ? parseFloat(v) : undefined })); }} placeholder="Tome" style={{ width: 72, padding: "9px 11px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 13, outline: "none" }} />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={seriesNumStr}
+                    onChange={(e) => setSeriesNumStr(e.target.value)}
+                    onBlur={() => {
+                      const v = seriesNumStr.replace(",", ".");
+                      const n = parseFloat(v);
+                      patch((b) => ({ ...b, seriesNum: v.trim() && !isNaN(n) ? n : undefined }));
+                    }}
+                    placeholder="Tome"
+                    style={{ width: 72, padding: "9px 11px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 13, outline: "none", color: "var(--ink)" }}
+                  />
                 </div>
               </div>
 
               {/* Dates de lecture */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
-                <div style={labelStyle}>Dates de lecture</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={labelStyle}>Dates</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Commencé le</div>
                     <input type="date" value={book.startedAt || ""} onChange={(e) => patch((b) => ({ ...b, startedAt: e.target.value || undefined }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 12.5, outline: "none", colorScheme: "dark" }} />
@@ -518,6 +543,10 @@ function BookSheetContent({ book }: { book: Book }) {
                     <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Terminé le</div>
                     <input type="date" value={book.finishedAt || ""} onChange={(e) => patch((b) => ({ ...b, finishedAt: e.target.value || undefined }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 12.5, outline: "none", colorScheme: "dark" }} />
                   </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Date de sortie (si pas encore publié)</div>
+                  <input type="date" value={book.releaseDate || ""} onChange={(e) => patch((b) => ({ ...b, releaseDate: e.target.value || undefined }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 12.5, outline: "none", colorScheme: "dark" }} />
                 </div>
               </div>
 
