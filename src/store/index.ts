@@ -343,7 +343,11 @@ export const useStore = create<AppState>((set, get) => ({
 
   deleteBook(id) {
     set((s) => ({ books: s.books.filter((b) => b.id !== id), open: s.open === id ? null : s.open }));
-    fetch(`/api/books/${id}`, { method: "DELETE" }).catch(console.error);
+    fetch(`/api/books/${id}`, { method: "DELETE" })
+      .then(async (r) => {
+        if (!r.ok) console.error(`[deleteBook] DELETE /api/books/${id} ${r.status}:`, await r.text());
+      })
+      .catch(console.error);
   },
 
   addPlatform(bookId, raw) {
