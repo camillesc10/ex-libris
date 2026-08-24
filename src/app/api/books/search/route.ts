@@ -85,14 +85,190 @@ function isIsbn(q: string) {
   return /^\d{10}$/.test(digits) || /^\d{13}$/.test(digits);
 }
 
+// Open Library Books API — dedicated ISBN lookup
+async function fetchOLByIsbn(isbn: string): Promise<GoogleBookResult | null> {
+  try {
+    const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: Record<string, any> = await res.json();
+    const key = `ISBN:${isbn}`;
+    const book = data[key];
+    if (!book) return null;
+
+    const cover: string | null =
+      book.cover?.large ?? book.cover?.medium ?? book.cover?.small ?? null;
+    const authors: string = (book.authors ?? []).map((a: { name: string }) => a.name).join(", ");
+    const year: string = book.publish_date
+      ? String(book.publish_date).replace(/\D.*/, "").slice(0, 4)
+      : "";
+    const pages: number = book.number_of_pages ?? 0;
+    const isbn13: string | null =
+      book.identifiers?.isbn_13?.[0] ?? book.identifiers?.isbn_10?.[0] ?? isbn;
+
+    return {
+      id: key,
+      title: book.title ?? "",
+      author: authors,
+      pages,
+      cover,
+      publisher: (book.publishers ?? []).map((p: { name: string }) => p.name).join(", "),
+      year,
+      lang: "FR",
+      snippet: book.excerpts?.[0]?.text?.slice(0, 200) ?? "",
+      isbn: isbn13,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── BnF SRU ──────────────────────────────────────────────────────────────────
+
+function xmlGet(record: string, tag: string): string {
+  const val = record.match(new RegExp(`<dc:${tag}[^>]*>([^<]*)<\\/dc:${tag}>`))?.[1]?.trim() ?? "";
+  return val.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
+}
+
+function xmlGetAll(record: string, tag: string): string[] {
+  return [...record.matchAll(new RegExp(`<dc:${tag}[^>]*>([^<]*)<\\/dc:${tag}>`, "g"))]
+    .map(m => m[1].trim().replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
+}
+
+async function fetchBnF(q: string, isbnQuery: boolean): Promise<GoogleBookResult[]> {
+  try {
+    const query = isbnQuery ? `bib.isbn adj "${q}"` : `bib.anywhere adj "${q}"`;
+    const url = `https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query=${encodeURIComponent(query)}&maximumRecords=12&recordSchema=dublincore`;
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const xml = await res.text();
+
+    const records = xml.match(/<oai_dc:dc[\s\S]*?<\/oai_dc:dc>/g) ?? [];
+    return records.map((rec, i) => {
+      const title = xmlGet(rec, "title");
+      const author = xmlGet(rec, "creator");
+      const date = xmlGet(rec, "date").slice(0, 4);
+      const publisher = xmlGet(rec, "publisher");
+      const format = xmlGet(rec, "format");
+      const identifiers = xmlGetAll(rec, "identifier");
+
+      const pages = parseInt(format.match(/(\d+)\s*p/)?.[1] ?? "0") || 0;
+      const rawIsbn = identifiers.find(id => /\d{9}[\dX]/i.test(id.replace(/[^0-9Xx]/g, ""))) ?? null;
+      const isbn = rawIsbn ? rawIsbn.replace(/[^0-9Xx]/gi, "").replace(/x/g, "X").slice(-13) : null;
+
+      const cover = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg` : null;
+
+      return {
+        id: `bnf:${i}`,
+        title,
+        author,
+        pages,
+        cover,
+        publisher,
+        year: date,
+        lang: "FR",
+        snippet: "",
+        isbn,
+      };
+    }).filter(b => b.title);
+  } catch {
+    return [];
+  }
+}
+
+// ─── inventaire.io ────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function invClaim(claims: any, prop: string) {
+  return claims?.[prop]?.[0]?.value;
+}
+
+async function fetchInventaireByIsbn(isbn: string): Promise<GoogleBookResult | null> {
+  try {
+    const url = `https://inventaire.io/api/entities?action=by-uris&uris=isbn:${isbn}`;
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await res.json();
+    const entity = data.entities?.[`isbn:${isbn}`];
+    if (!entity) return null;
+
+    const claims = entity.claims ?? {};
+    const labels = entity.labels ?? {};
+    const title: string = labels.fr ?? labels.en ?? (Object.values(labels) as string[])[0] ?? "";
+    if (!title) return null;
+
+    const author: string = invClaim(claims, "wdt:P2093") ?? "";
+    const yearRaw: string | undefined = invClaim(claims, "wdt:P577");
+    const year = yearRaw ? String(new Date(yearRaw).getFullYear()) : "";
+    const pages: number = invClaim(claims, "wdt:P1104") ?? 0;
+    const cover: string | null = entity.image?.url ?? null;
+
+    return {
+      id: `inv:isbn:${isbn}`,
+      title,
+      author,
+      pages,
+      cover,
+      publisher: "",
+      year,
+      lang: "FR",
+      snippet: "",
+      isbn,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchInventaireSearch(q: string): Promise<GoogleBookResult[]> {
+  try {
+    const url = `https://inventaire.io/api/entities?action=search&search=${encodeURIComponent(q)}&lang=fr&limit=12`;
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await res.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const results: any[] = data.results ?? [];
+
+    return results.map((r, i) => {
+      const desc: string = r.description ?? "";
+      const yearMatch = desc.match(/,?\s*(\d{4})\s*$/);
+      const year = yearMatch?.[1] ?? "";
+      let author = desc.replace(/,?\s*\d{4}\s*$/, "").trim();
+      author = author.replace(/^(?:roman|livre|essai|récit|biographie|ouvrage)\s+(?:de|d')\s*/i, "");
+      author = author.replace(/^(?:de|d')\s*/i, "");
+
+      return {
+        id: `inv:${r.uri ?? i}`,
+        title: r.label ?? "",
+        author,
+        pages: 0,
+        cover: r.image?.url ?? null,
+        publisher: "",
+        year,
+        lang: "FR",
+        snippet: "",
+        isbn: null,
+      };
+    }).filter(b => b.title);
+  } catch {
+    return [];
+  }
+}
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") ?? "";
   if (!q.trim()) return NextResponse.json({ items: [] });
 
   const isbn = isIsbn(q);
-  const googleQuery = isbn ? `isbn:${q.replace(/[-\s]/g, "")}` : q;
+  const isbnDigits = q.replace(/[-\s]/g, "");
+  const googleQuery = isbn ? `isbn:${isbnDigits}` : q;
 
-  // Try Google Books first
+  // 1. Google Books
   try {
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(googleQuery)}&maxResults=12&printType=books`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
@@ -101,24 +277,37 @@ export async function GET(req: NextRequest) {
       const items = mapGoogleBooks(data.items ?? []);
       if (items.length) return NextResponse.json({ items, source: "google" });
     }
-    // 429 or empty — fall through to Open Library
-  } catch {
-    // network error — fall through
+  } catch { /* fall through */ }
+
+  // 2. Open Library
+  if (isbn) {
+    const book = await fetchOLByIsbn(isbnDigits);
+    if (book) return NextResponse.json({ items: [book], source: "openlibrary" });
+  } else {
+    try {
+      const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=12`;
+      const res = await fetch(url, { next: { revalidate: 3600 } });
+      if (res.ok) {
+        const data = await res.json();
+        const items = mapOpenLibrary(data.docs ?? []);
+        if (items.length) return NextResponse.json({ items, source: "openlibrary" });
+      }
+    } catch { /* fall through */ }
   }
 
-  // Fallback: Open Library
-  try {
-    const olParams = isbn
-      ? `isbn=${encodeURIComponent(q.replace(/[-\s]/g, ""))}&limit=12`
-      : `q=${encodeURIComponent(q)}&limit=12`;
-    const url = `https://openlibrary.org/search.json?${olParams}`;
-    const res = await fetch(url, { next: { revalidate: 3600 } });
-    if (!res.ok) throw new Error(`OL ${res.status}`);
-    const data = await res.json();
-    const items = mapOpenLibrary(data.docs ?? []);
-    return NextResponse.json({ items, source: "openlibrary" });
-  } catch (e) {
-    console.error("[Books search]", e);
-    return NextResponse.json({ items: [], error: String(e) });
+  // 3. BnF (Bibliothèque nationale de France)
+  const bnfItems = await fetchBnF(isbn ? isbnDigits : q, isbn);
+  if (bnfItems.length) return NextResponse.json({ items: bnfItems, source: "bnf" });
+
+  // 4. inventaire.io
+  if (isbn) {
+    const invBook = await fetchInventaireByIsbn(isbnDigits);
+    if (invBook) return NextResponse.json({ items: [invBook], source: "inventaire" });
+  } else {
+    const invItems = await fetchInventaireSearch(q);
+    if (invItems.length) return NextResponse.json({ items: invItems, source: "inventaire" });
   }
+
+  console.error("[Books search] No results from any source for:", q);
+  return NextResponse.json({ items: [] });
 }
