@@ -388,11 +388,11 @@ export const useStore = create<AppState>((set, get) => ({
   setShelfSort: (s) => set({ shelfSort: s }),
   setAdvFilters: (f) => set((s) => ({ advFilters: { ...s.advFilters, ...f } })),
   setPalWaveSize: (n) => set({ palWaveSize: n }),
-  setShelfColor: (shelf, color) => set((s) => {
-    const shelfColors = { ...s.shelfColors, [shelf]: color };
+  setShelfColor: (shelf, color) => {
+    const shelfColors = { ...get().shelfColors, [shelf]: color };
+    set({ shelfColors });
     fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shelfColors }) }).catch(() => {});
-    return { shelfColors };
-  }),
+  },
   setYearGoal: (n) => {
     set({ yearGoal: n });
     fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ yearGoal: n }) }).catch(() => {});
@@ -467,7 +467,8 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
       const j = await res.json();
-      const source = j.source === "openlibrary" ? "Open Library" : "Google Books";
+      const SOURCE_LABELS: Record<string, string> = { hardcover: "Hardcover", openlibrary: "Open Library", google: "Google Books", bnf: "BnF", inventaire: "inventaire.io" };
+      const source = SOURCE_LABELS[j.source ?? ""] ?? j.source ?? "";
       const rs: SearchResult[] = (j.items || []).map((it: { id: string; title: string; author: string; year: string; snippet: string; cover: string | null; pages: number; lang: string; isbn?: string; releaseDate?: string }) => ({
         key: it.id,
         title: it.title || "Sans titre",
@@ -499,7 +500,7 @@ export const useStore = create<AppState>((set, get) => ({
     const i = get().books.length;
     const [bg, ink] = COVER_PALETTE[i % COVER_PALETTE.length];
     const nb: Book = {
-      id: `b${i}`, title: r.title, author: r.author, year: r.year,
+      id: crypto.randomUUID(), title: r.title, author: r.author, year: r.year,
       genre: "Romance", lang: r.lang, spice: 0, rating: 0, pages: r.pages, page: 0,
       tropes: [], lists: ["PAL"], resume: r.snippet, comment: "",
       bg, ink, platforms: [{ name: "Kobo", langs: "FR, EN" }],
@@ -534,22 +535,20 @@ export const useStore = create<AppState>((set, get) => ({
 
   // ── Club ──
   voteProposal(bookId) {
-    set((s) => {
-      const updated = s.proposals.map((p) =>
-        p.bookId === bookId
-          ? { ...p, votes: p.votedByMe ? p.votes - 1 : p.votes + 1, votedByMe: !p.votedByMe }
-          : p
-      );
-      const p = updated.find((p) => p.bookId === bookId);
-      if (p) {
-        fetch(`/api/club/${bookId}/vote`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ votes: p.votes, votedByMe: p.votedByMe }),
-        }).catch(() => {});
-      }
-      return { proposals: updated };
-    });
+    const updated = get().proposals.map((p) =>
+      p.bookId === bookId
+        ? { ...p, votes: p.votedByMe ? p.votes - 1 : p.votes + 1, votedByMe: !p.votedByMe }
+        : p
+    );
+    set({ proposals: updated });
+    const p = updated.find((p) => p.bookId === bookId);
+    if (p) {
+      fetch(`/api/club/${bookId}/vote`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ votes: p.votes, votedByMe: p.votedByMe }),
+      }).catch(() => {});
+    }
   },
 
   proposeBook(book) {
@@ -600,12 +599,14 @@ export const useStore = create<AppState>((set, get) => ({
   setNewList: (v) => set({ newList: v }),
 
   deleteList(name) {
+    const affected = get().books.filter((b) => b.lists.includes(name));
     set((s) => ({
       lists: s.lists.filter((l) => l.name !== name),
       books: s.books.map((b) => ({ ...b, lists: b.lists.filter((n) => n !== name) })),
       listFilter: s.listFilter === name ? null : s.listFilter,
     }));
     fetch(`/api/lists/${encodeURIComponent(name)}`, { method: "DELETE" }).catch(() => {});
+    affected.forEach((b) => get().patchBook(b.id, (bk) => ({ ...bk, lists: bk.lists.filter((n) => n !== name) })));
   },
 
   addList() {
@@ -638,22 +639,20 @@ export const useStore = create<AppState>((set, get) => ({
   sendDraft() {
     const { draft, convo } = get();
     if (!draft.trim()) return;
-    set((s) => {
-      const updated = s.convos.map((c) =>
-        c.id === convo
-          ? { ...c, messages: [...c.messages, { from: "me" as const, text: draft.trim() }], time: "maintenant" }
-          : c
-      );
-      const updatedConvo = updated.find((c) => c.id === convo);
-      if (updatedConvo) {
-        fetch(`/api/conversations/${convo}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: updatedConvo.messages, time: "maintenant" }),
-        }).catch(() => {});
-      }
-      return { convos: updated, draft: "" };
-    });
+    const updated = get().convos.map((c) =>
+      c.id === convo
+        ? { ...c, messages: [...c.messages, { from: "me" as const, text: draft.trim() }], time: "maintenant" }
+        : c
+    );
+    set({ convos: updated, draft: "" });
+    const updatedConvo = updated.find((c) => c.id === convo);
+    if (updatedConvo) {
+      fetch(`/api/conversations/${convo}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: updatedConvo.messages, time: "maintenant" }),
+      }).catch(() => {});
+    }
   },
 
   addToMyPal(bookId) {
