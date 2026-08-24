@@ -344,6 +344,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   deleteBook(id) {
     set((s) => ({ books: s.books.filter((b) => b.id !== id), open: s.open === id ? null : s.open }));
+    fetch(`/api/books/${id}`, { method: "DELETE" }).catch(console.error);
   },
 
   addPlatform(bookId, raw) {
