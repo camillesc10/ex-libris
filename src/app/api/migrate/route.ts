@@ -119,5 +119,76 @@ export async function GET() {
     ON CONFLICT (user_id, book_id) DO NOTHING
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS tropes_catalog (
+      id       TEXT PRIMARY KEY,
+      name     TEXT NOT NULL,
+      category TEXT NOT NULL
+    )
+  `;
+
+  const TROPES: { id: string; name: string; category: string }[] = [
+    // Romance
+    { id: "enemies-to-lovers",    name: "Enemies to Lovers",       category: "romance" },
+    { id: "friends-to-lovers",    name: "Friends to Lovers",       category: "romance" },
+    { id: "slow-burn",            name: "Slow Burn",               category: "romance" },
+    { id: "forced-proximity",     name: "Forced Proximity",        category: "romance" },
+    { id: "fake-dating",          name: "Fake Dating",             category: "romance" },
+    { id: "love-triangle",        name: "Love Triangle",           category: "romance" },
+    { id: "second-chance",        name: "Second Chance Romance",   category: "romance" },
+    { id: "forbidden-love",       name: "Forbidden Love",          category: "romance" },
+    { id: "one-bed",              name: "One Bed",                 category: "romance" },
+    { id: "grumpy-sunshine",      name: "Grumpy x Sunshine",      category: "romance" },
+    { id: "opposites-attract",    name: "Opposites Attract",       category: "romance" },
+    { id: "childhood-sweethearts",name: "Childhood Sweethearts",  category: "romance" },
+    { id: "instalove",            name: "Instalove",               category: "romance" },
+    { id: "arranged-marriage",    name: "Arranged Marriage",       category: "romance" },
+    { id: "beauty-beast",         name: "Beauty and the Beast",    category: "romance" },
+    { id: "cinderella",           name: "Cinderella",              category: "romance" },
+    { id: "bodyguard",            name: "Bodyguard Romance",       category: "romance" },
+    { id: "celebrity-ordinary",   name: "Celebrity x Ordinary",   category: "romance" },
+    { id: "boss-employee",        name: "Boss x Employee",         category: "romance" },
+    { id: "age-gap",              name: "Age Gap",                 category: "romance" },
+    { id: "the-bet",              name: "The Bet",                 category: "romance" },
+    { id: "fake-relationship",    name: "Fake Relationship",       category: "romance" },
+    { id: "miscommunication",     name: "Miscommunication",        category: "romance" },
+    { id: "brothers-best-friend", name: "Brother's Best Friend",  category: "romance" },
+    { id: "roommates",            name: "Roommates",               category: "romance" },
+    { id: "sports-romance",       name: "Sports Romance",          category: "romance" },
+    { id: "small-town",           name: "Small Town Romance",      category: "romance" },
+    { id: "road-trip",            name: "Road Trip Romance",       category: "romance" },
+    { id: "holiday-romance",      name: "Holiday Romance",         category: "romance" },
+    { id: "amnesia",              name: "Amnesia",                 category: "romance" },
+    { id: "hurt-comfort",         name: "Hurt/Comfort",            category: "romance" },
+    { id: "protector",            name: "Protector Romance",       category: "romance" },
+    { id: "revenge-romance",      name: "Revenge Romance",         category: "romance" },
+    { id: "found-family-romance", name: "Found Family Romance",    category: "romance" },
+    // Fantasy
+    { id: "chosen-one",           name: "The Chosen One",          category: "fantasy" },
+    { id: "hidden-world",         name: "Hidden World",            category: "fantasy" },
+    { id: "quest",                name: "Quest",                   category: "fantasy" },
+    { id: "magical-academy",      name: "Magical Academy",         category: "fantasy" },
+    { id: "lost-heir",            name: "Lost Heir",               category: "fantasy" },
+    { id: "forbidden-magic",      name: "Forbidden Magic",         category: "fantasy" },
+    { id: "prophecy",             name: "Prophecy",                category: "fantasy" },
+    { id: "portal-fantasy",       name: "Portal Fantasy",          category: "fantasy" },
+    { id: "resistance-vs-empire", name: "Resistance vs Empire",   category: "fantasy" },
+    { id: "unlikely-alliance",    name: "Unlikely Alliance",       category: "fantasy" },
+    { id: "dark-vs-light",        name: "Dark vs Light",           category: "fantasy" },
+    { id: "ancient-evil",         name: "Ancient Evil Awakened",   category: "fantasy" },
+    { id: "magical-species",      name: "Magical Species",         category: "fantasy" },
+    { id: "complex-magic-system", name: "Complex Magic System",    category: "fantasy" },
+    { id: "political-intrigue",   name: "Political Intrigue",      category: "fantasy" },
+    { id: "monster-romance",      name: "Monster Romance",         category: "fantasy" },
+  ];
+
+  for (const t of TROPES) {
+    await sql`
+      INSERT INTO tropes_catalog (id, name, category)
+      VALUES (${t.id}, ${t.name}, ${t.category})
+      ON CONFLICT (id) DO NOTHING
+    `;
+  }
+
   return NextResponse.json({ ok: true, message: "Tables créées et données migrées." });
 }
