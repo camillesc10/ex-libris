@@ -119,6 +119,12 @@ export async function GET() {
     ON CONFLICT (user_id, book_id) DO NOTHING
   `;
 
+  // Déplacer rating, started_at, finished_at, page_notes de books vers user_books
+  await sql`ALTER TABLE books DROP COLUMN IF EXISTS rating`;
+  await sql`ALTER TABLE books DROP COLUMN IF EXISTS started_at`;
+  await sql`ALTER TABLE books DROP COLUMN IF EXISTS finished_at`;
+  await sql`ALTER TABLE books DROP COLUMN IF EXISTS page_notes`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS tropes_catalog (
       id       TEXT PRIMARY KEY,
