@@ -34,7 +34,7 @@ export async function GET() {
           spice: ub.spice ?? 0,
           rating: ub.rating ?? 0,
           page: ub.page ?? 0,
-          tropes: ub.tropes ?? [],
+          tropes: b.tropes ?? [],
           lists: ub.lists ?? [],
           resume: ub.resume ?? "",
           comment: ub.comment ?? "",
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     const book = await req.json();
     const { id, title, author, year, genre, lang, pages, series, seriesNum, coverUrl, bg, ink, ...rest } = book;
 
-    await db.insert(booksTable).values({ id, title, author, year, genre, lang, pages, series, seriesNum, coverUrl, bg: bg ?? "#1E1B4B", ink: ink ?? "#E8E3F0" }).onConflictDoNothing();
+    await db.insert(booksTable).values({ id, title, author, year, genre, lang, pages, series, seriesNum, coverUrl, bg: bg ?? "#1E1B4B", ink: ink ?? "#E8E3F0", tropes: rest.tropes ?? [] }).onConflictDoNothing();
     await db.insert(userBooksTable).values({
       id: crypto.randomUUID(),
       userId,
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
       spice: rest.spice ?? 0,
       rating: rest.rating ?? 0,
       page: rest.page ?? 0,
-      tropes: rest.tropes ?? [],
+      tropes: [],
       lists: rest.lists ?? [],
       resume: rest.resume ?? "",
       comment: rest.comment ?? "",
