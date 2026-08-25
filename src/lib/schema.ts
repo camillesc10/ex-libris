@@ -1,4 +1,4 @@
-import { pgTable, text, integer, real, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, real, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import type { Platform, PageNote } from "@/types";
 
 export const books = pgTable("books", {
@@ -8,24 +8,12 @@ export const books = pgTable("books", {
   year: text("year").default(""),
   genre: text("genre").default(""),
   lang: text("lang").default(""),
-  spice: integer("spice").default(0),
   pages: integer("pages").default(0),
-  page: integer("page").default(0),
   tropes: jsonb("tropes").$type<string[]>().default([]),
-  lists: jsonb("lists").$type<string[]>().default([]),
-  resume: text("resume").default(""),
-  comment: text("comment").default(""),
   bg: text("bg").notNull(),
   ink: text("ink").notNull(),
-  platforms: jsonb("platforms").$type<Platform[]>().default([]),
   series: text("series"),
   seriesNum: real("series_num"),
-  pros: text("pros").default(""),
-  cons: text("cons").default(""),
-  quote: text("quote").default(""),
-  dnfReason: text("dnf_reason").default(""),
-  relatedBooks: jsonb("related_books").$type<string[]>().default([]),
-  reminderDate: text("reminder_date"),
   coverUrl: text("cover_url"),
 });
 
@@ -43,15 +31,6 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
 });
 
-export const conversations = pgTable("conversations", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  initial: text("initial").notNull(),
-  avatarBg: text("avatar_bg").notNull(),
-  time: text("time").default(""),
-  messages: jsonb("messages").$type<import("@/types").Message[]>().default([]),
-});
-
 export const sealedNotes = pgTable("sealed_notes", {
   id: text("id").primaryKey(),
   page: integer("page").notNull(),
@@ -66,12 +45,6 @@ export const journalEntries = pgTable("journal_entries", {
   bookId: text("book_id").notNull(),
   pagesRead: integer("pages_read").default(0),
   note: text("note").default(""),
-});
-
-export const clubProposals = pgTable("club_proposals", {
-  bookId: text("book_id").primaryKey(),
-  votes: integer("votes").default(1),
-  votedByMe: boolean("voted_by_me").default(false),
 });
 
 export const userBooks = pgTable("user_books", {

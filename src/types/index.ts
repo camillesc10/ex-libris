@@ -62,21 +62,6 @@ export interface BookList {
   shareCode?: string;
 }
 
-export interface Message {
-  from: "me" | "them";
-  text?: string;
-  book?: string;
-}
-
-export interface Conversation {
-  id: string;
-  name: string;
-  initial: string;
-  avatarBg: string;
-  time: string;
-  messages: Message[];
-}
-
 export interface SealedNote {
   page: number;
   who: string;
@@ -88,12 +73,6 @@ export interface Reader {
   name: string;
   page: number;
   color: string;
-}
-
-export interface Proposal {
-  bookId: string;
-  votes: number;
-  votedByMe: boolean;
 }
 
 export interface SearchResult {

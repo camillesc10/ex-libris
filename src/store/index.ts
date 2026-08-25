@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import type {
   Theme, Layout, Flow, Screen,
-  Book, BookList, Conversation, SealedNote, Reader, SearchResult,
+  Book, BookList, SealedNote, Reader, SearchResult,
 } from "@/types";
 
 function parseCSVRow(row: string): string[] {
@@ -18,10 +18,10 @@ function parseCSVRow(row: string): string[] {
   return result;
 }
 import {
-  SEED_BOOKS, SEED_LISTS, SEED_CONVOS, SEED_NOTES, SEED_READERS,
+  SEED_BOOKS, SEED_LISTS, SEED_NOTES, SEED_READERS,
   COVER_PALETTE,
 } from "./data";
-import type { JournalEntry, Proposal } from "@/types";
+import type { JournalEntry } from "@/types";
 
 interface AppState {
   // Auth
@@ -63,21 +63,12 @@ interface AppState {
   // Journal
   journalEntries: JournalEntry[];
 
-  // Club
-  proposals: Proposal[];
-
   // Search
   query: string;
   results: SearchResult[];
   searching: boolean;
   source: string;
   added: string[];
-
-  // Messaging
-  convos: Conversation[];
-  convo: string;
-  draft: string;
-  pal: string[];
 
   // Shared reading
   readBook: string;
@@ -127,7 +118,6 @@ interface AppState {
   setShelfColor: (shelf: string, color: string) => void;
   setYearGoal: (n: number) => void;
   importGoodreads: (csv: string) => void;
-  importKindle: (txt: string) => void;
 
   setQuery: (q: string) => void;
   runSearch: () => Promise<void>;
@@ -139,14 +129,6 @@ interface AppState {
   generateShareCode: (listName: string) => void;
 
   addJournalEntry: (e: Omit<JournalEntry, "id" | "date">) => void;
-
-  voteProposal: (bookId: string) => void;
-  proposeBook: (book: import("@/types").Book) => void;
-
-  openConvo: (id: string) => void;
-  setDraft: (v: string) => void;
-  sendDraft: () => void;
-  addToMyPal: (bookId: string) => void;
 
   setReadBook: (id: string) => void;
   toggleInvite: (name: string) => void;
@@ -193,18 +175,11 @@ export const useStore = create<AppState>((set, get) => ({
 
   journalEntries: [],
 
-  proposals: [],
-
   query: "",
   results: [],
   searching: false,
   source: "",
   added: [],
-
-  convos: SEED_CONVOS.map((c) => ({ ...c, messages: [...c.messages] })),
-  convo: "",
-  draft: "",
-  pal: [],
 
   readBook: "",
   readers: SEED_READERS.map((r) => ({ ...r })),
@@ -298,22 +273,19 @@ export const useStore = create<AppState>((set, get) => ({
   async hydrate() {
     if (get().hydrated) return;
     try {
-      const [br, lr, cr, nr, jr, clr, pr] = await Promise.all([
-        fetch("/api/books"), fetch("/api/lists"), fetch("/api/conversations"),
-        fetch("/api/notes"), fetch("/api/journal"), fetch("/api/club"), fetch("/api/prefs"),
+      const [br, lr, nr, jr, pr] = await Promise.all([
+        fetch("/api/books"), fetch("/api/lists"),
+        fetch("/api/notes"), fetch("/api/journal"), fetch("/api/prefs"),
       ]);
-      const [booksData, listsData, convosData, notesRaw, journalData, clubData, prefsData] = await Promise.all([
-        br.json(), lr.json(), cr.json(), nr.json(), jr.json(), clr.json(), pr.json(),
+      const [booksData, listsData, notesRaw, journalData, prefsData] = await Promise.all([
+        br.json(), lr.json(), nr.json(), jr.json(), pr.json(),
       ]);
       const notes = (notesRaw as { page: number; who: string; noteText: string; when: string }[]).map(
         (n) => ({ page: n.page, who: n.who, text: n.noteText, when: n.when })
       );
-      const firstConvo = convosData[0]?.id ?? "";
       set({
         books: booksData, lists: listsData,
-        convos: convosData, convo: firstConvo,
         notes, journalEntries: journalData,
-        proposals: clubData,
         shelfColors: prefsData.shelfColors ?? {},
         yearGoal: prefsData.yearGoal ?? 0,
         readBook: prefsData.readBook ?? "",
@@ -533,68 +505,6 @@ export const useStore = create<AppState>((set, get) => ({
     if (book) get().updatePage(bookId, book.page + pagesRead);
   },
 
-  // ── Club ──
-  voteProposal(bookId) {
-    const updated = get().proposals.map((p) =>
-      p.bookId === bookId
-        ? { ...p, votes: p.votedByMe ? p.votes - 1 : p.votes + 1, votedByMe: !p.votedByMe }
-        : p
-    );
-    set({ proposals: updated });
-    const p = updated.find((p) => p.bookId === bookId);
-    if (p) {
-      fetch(`/api/club/${bookId}/vote`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ votes: p.votes, votedByMe: p.votedByMe }),
-      }).catch(() => {});
-    }
-  },
-
-  proposeBook(book) {
-    if (get().proposals.some((p) => p.bookId === book.id)) {
-      get().ping("Ce livre est déjà proposé.");
-      return;
-    }
-    const proposal: Proposal = { bookId: book.id, votes: 1, votedByMe: true };
-    set((s) => ({ proposals: [...s.proposals, proposal] }));
-    fetch("/api/club", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(proposal),
-    }).catch(() => {});
-    get().ping(`« ${book.title} » proposé au club !`);
-  },
-
-  // ── Kindle import ──
-  importKindle(txt) {
-    const SEPARATOR = "==========";
-    const clips = txt.split(SEPARATOR).map((s) => s.trim()).filter(Boolean);
-    const { books } = get();
-    let imported = 0;
-    const updates: Record<string, typeof books[0]["pageNotes"]> = {};
-    for (const clip of clips) {
-      const lines = clip.split("\n").map((l) => l.trim()).filter(Boolean);
-      if (lines.length < 3) continue;
-      const titleLine = lines[0];
-      const metaLine = lines[1] || "";
-      const text = lines.slice(2).join(" ").trim();
-      if (!text) continue;
-      const pageMatch = metaLine.match(/page\s+(\d+)/i) || metaLine.match(/position\s+(\d+)/i);
-      const page = pageMatch ? parseInt(pageMatch[1], 10) : 0;
-      const book = books.find((b) => titleLine.toLowerCase().includes(b.title.toLowerCase().slice(0, 12)));
-      if (!book) continue;
-      if (!updates[book.id]) updates[book.id] = [...(book.pageNotes || [])];
-      updates[book.id]!.push({ page, text, date: new Date().toISOString().slice(0, 10) });
-      imported++;
-    }
-    if (!imported) { get().ping("Aucun surlignage reconnu dans ce fichier."); return; }
-    Object.entries(updates).forEach(([id, pageNotes]) => {
-      get().patchBook(id, (b) => ({ ...b, pageNotes: pageNotes ?? [] }));
-    });
-    get().ping(`${imported} surlignage(s) Kindle importé(s) 📖`);
-  },
-
   // ── Lists ──
   setNewList: (v) => set({ newList: v }),
 
@@ -630,41 +540,6 @@ export const useStore = create<AppState>((set, get) => ({
       body: JSON.stringify({ shareCode: code }),
     }).catch(() => {});
     get().ping(`Code de partage : ${code}`);
-  },
-
-  // ── Messages ──
-  openConvo: (id) => set({ convo: id }),
-  setDraft: (v) => set({ draft: v }),
-
-  sendDraft() {
-    const { draft, convo } = get();
-    if (!draft.trim()) return;
-    const updated = get().convos.map((c) =>
-      c.id === convo
-        ? { ...c, messages: [...c.messages, { from: "me" as const, text: draft.trim() }], time: "maintenant" }
-        : c
-    );
-    set({ convos: updated, draft: "" });
-    const updatedConvo = updated.find((c) => c.id === convo);
-    if (updatedConvo) {
-      fetch(`/api/conversations/${convo}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedConvo.messages, time: "maintenant" }),
-      }).catch(() => {});
-    }
-  },
-
-  addToMyPal(bookId) {
-    set((s) => {
-      if (s.pal.includes(bookId)) return s;
-      const books = s.books.map((b) =>
-        b.id === bookId && !b.lists.includes("PAL")
-          ? { ...b, lists: [...b.lists, "PAL"] }
-          : b
-      );
-      return { books, pal: [...s.pal, bookId] };
-    });
   },
 
   // ── Shared reading ──
