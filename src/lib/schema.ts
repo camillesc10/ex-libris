@@ -111,3 +111,9 @@ export const userPrefs = pgTable("user_prefs", {
   readBook: text("read_book").default(""),
   myPage: integer("my_page").default(0),
 });
+
+export const tropesCatalog = pgTable("tropes_catalog", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+});
