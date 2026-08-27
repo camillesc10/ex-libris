@@ -66,9 +66,10 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
   }
 }
 
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
 async function fetchGenreFromHardcover(title: string, author: string): Promise<Genre | ""> {
-  // Les genres sont déjà dans le document de recherche (string[])
-  // On demande 5 hits pour pouvoir filtrer par auteur (le premier peut être un guide/compagnon)
+  // Étape 1 : recherche — 5 hits pour matcher titre+auteur
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const searchData: any = await hcPost(
     `query($q: String!) { search(query: $q, query_type: "Book", per_page: 5) { results } }`,
@@ -77,17 +78,34 @@ async function fetchGenreFromHardcover(title: string, author: string): Promise<G
   const hits: unknown[] = searchData?.data?.search?.results?.hits ?? [];
   if (!hits.length) return "";
 
-  // Préférer le hit dont l'auteur correspond
-  const normAuthor = author.toLowerCase().replace(/[^a-z]/g, "").slice(0, 8);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const best = hits.find((h: any) =>
-    (h.document?.author_names as string[] ?? []).some(
-      (a: string) => a.toLowerCase().replace(/[^a-z]/g, "").includes(normAuthor)
-    )
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) as any ?? (hits[0] as any);
+  const normTitle = norm(title).slice(0, 12);
+  const normAuthor = norm(author).slice(0, 8);
 
-  const genres: string[] = best?.document?.genres ?? [];
+  // Priorité : title+author > author seul > premier hit
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const best: any =
+    hits.find((h: any) =>
+      norm(h.document?.title ?? "").includes(normTitle) &&
+      (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normAuthor))
+    ) ??
+    hits.find((h: any) =>
+      (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normAuthor))
+    ) ??
+    hits[0];
+
+  const bookId = parseInt(best?.document?.id ?? "0");
+
+  // Étape 2 : cached_tags donne la liste complète des genres avec counts
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tagData: any = await hcPost(
+    `query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { cached_tags } }`,
+    { id: bookId }
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const genreTags: string[] = (tagData?.data?.books?.[0]?.cached_tags?.Genre ?? []).map((g: any) => g.tag as string);
+
+  // Fallback : genres du document de recherche si cached_tags vide
+  const genres = genreTags.length ? genreTags : (best?.document?.genres ?? []);
   return mapHardcoverGenres(genres, title, author);
 }
 
