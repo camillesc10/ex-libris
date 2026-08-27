@@ -5,7 +5,7 @@ const PAGE_META: Record<string, { kicker: string; title: string }> = {
   shelf: { kicker: "Bibliothèque", title: "Mon étagère" },
   search: { kicker: "Google Books · Open Library", title: "Ajouter un livre" },
   lists: { kicker: "Organisation", title: "Mes listes" },
-  sync: { kicker: "Sans spoiler", title: "Lecture partagée" },
+  sync:     { kicker: "Sans spoiler", title: "Lecture partagée" },
 };
 
 export default function Header() {

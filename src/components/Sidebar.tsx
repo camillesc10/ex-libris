@@ -29,6 +29,7 @@ export default function Sidebar() {
     { key: "series" as const, label: "Mes sagas", count: new Set(books.filter((b) => b.series).map((b) => b.series)).size || "" },
     { key: "journal" as const, label: "Journal", count: "" },
     { key: "timeline" as const, label: "Chronologie", count: "" },
+    { key: "sync" as const, label: "Lecture partagée", count: "" },
     { key: "activity" as const, label: "Activité", count: "" },
   ];
 

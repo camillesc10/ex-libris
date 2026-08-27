@@ -25,6 +25,7 @@ const SCREEN_TO_PATH: Record<Screen, string> = {
   series:   "/sagas",
   me:       "/moi",
   profile:  "/profil",
+  sync:     "/ensemble",
 };
 
 export default function RouterSync() {

@@ -217,7 +217,8 @@ export default function ActivityScreen() {
 }
 
 function EventCard({ ev }: { ev: ActivityEvent }) {
-  const { viewProfile, currentUserId } = useStore();
+  const { viewProfile, currentUserId, openBook, books } = useStore();
+  const bookInLibrary = books.find((b) => b.id === ev.bookId);
   const isMe = ev.userId === currentUserId;
   const displayName = isMe ? "Vous" : (ev.userName ?? "?");
   const initial = displayName.charAt(0).toUpperCase();
@@ -260,12 +261,18 @@ function EventCard({ ev }: { ev: ActivityEvent }) {
         </div>
       </div>
 
-      {/* Book cover */}
-      <div style={{
-        width: 36, height: 54, borderRadius: 5, flexShrink: 0,
-        background: ev.bookBg, overflow: "hidden",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
+      {/* Book cover — clickable if in library */}
+      <button
+        onClick={() => bookInLibrary && openBook(bookInLibrary.id)}
+        style={{
+          width: 36, height: 54, borderRadius: 5, flexShrink: 0,
+          background: ev.bookBg, overflow: "hidden",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          border: "none", padding: 0,
+          cursor: bookInLibrary ? "pointer" : "default",
+          boxShadow: bookInLibrary ? "0 0 0 1.5px var(--accent)" : "none",
+        }}
+      >
         {ev.bookCoverUrl ? (
           <img
             src={ev.bookCoverUrl}
@@ -277,7 +284,7 @@ function EventCard({ ev }: { ev: ActivityEvent }) {
             {ev.bookTitle.slice(0, 12)}
           </span>
         )}
-      </div>
+      </button>
     </div>
   );
 }

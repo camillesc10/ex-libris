@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useStore } from "@/store";
 
 export default function JournalScreen() {
-  const { books, journalEntries, addJournalEntry } = useStore();
+  const { books, journalEntries, addJournalEntry, openBook } = useStore();
 
   const booksEnCours = books.filter((b) => b.lists.includes("En cours"));
 
@@ -252,54 +252,84 @@ export default function JournalScreen() {
                   borderRadius: 14,
                   background: "var(--surface)",
                   padding: "14px 18px",
+                  display: "flex",
+                  gap: 14,
+                  alignItems: "flex-start",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "baseline",
-                    gap: 12,
-                    marginBottom: 6,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span
+                {/* Clickable cover */}
+                {book && (
+                  <button
+                    onClick={() => openBook(book.id)}
                     style={{
-                      fontFamily: "var(--font-cinzel, Cinzel, serif)",
-                      fontSize: 13.5,
+                      flexShrink: 0, width: 36, height: 54,
+                      borderRadius: "3px 7px 7px 3px",
+                      background: book.bg, overflow: "hidden",
+                      border: "none", cursor: "pointer", padding: 0,
+                      boxShadow: "0 4px 10px -4px rgba(0,0,0,.4)",
                     }}
                   >
-                    {book?.title ?? "Livre inconnu"}
-                  </span>
-                  <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                    {entry.date}
-                  </span>
-                </div>
+                    {book.coverUrl ? (
+                      <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 2 }}>
+                        <span style={{ fontSize: 7, color: book.ink, lineHeight: 1.2, textAlign: "center", fontFamily: "Cinzel, serif" }}>{book.title.slice(0, 10)}</span>
+                      </div>
+                    )}
+                  </button>
+                )}
 
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--accent)",
-                    fontWeight: 600,
-                    marginBottom: entry.note ? 8 : 0,
-                  }}
-                >
-                  {entry.pagesRead} page{entry.pagesRead > 1 ? "s" : ""} lues
-                </div>
-
-                {entry.note && (
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      fontSize: 13,
-                      color: "var(--muted)",
-                      fontStyle: "italic",
-                      lineHeight: 1.55,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      gap: 12,
+                      marginBottom: 6,
+                      flexWrap: "wrap",
                     }}
                   >
-                    {entry.note}
+                    <button
+                      onClick={() => book && openBook(book.id)}
+                      style={{
+                        fontFamily: "var(--font-cinzel, Cinzel, serif)",
+                        fontSize: 13.5, background: "none", border: "none",
+                        cursor: book ? "pointer" : "default", padding: 0,
+                        color: "var(--ink)", textAlign: "left",
+                      }}
+                    >
+                      {book?.title ?? "Livre inconnu"}
+                    </button>
+                    <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>
+                      {entry.date}
+                    </span>
                   </div>
-                )}
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--accent)",
+                      fontWeight: 600,
+                      marginBottom: entry.note ? 8 : 0,
+                    }}
+                  >
+                    {entry.pagesRead} page{entry.pagesRead > 1 ? "s" : ""} lues
+                  </div>
+
+                  {entry.note && (
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: "var(--muted)",
+                        fontStyle: "italic",
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {entry.note}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );

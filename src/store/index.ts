@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import type {
   Theme, Layout, Flow, Screen,
-  Book, BookList, SearchResult,
+  Book, BookList, SearchResult, SyncNote, SyncReader,
 } from "@/types";
 
 function parseCSVRow(row: string): string[] {
@@ -124,6 +124,20 @@ interface AppState {
 
   addJournalEntry: (e: Omit<JournalEntry, "id" | "date">) => void;
 
+  // Sync / Lecture partagée
+  readBook: string;
+  readers: SyncReader[];
+  myPage: number;
+  pageInput: string;
+  notes: SyncNote[];
+  notePage: string;
+  noteText: string;
+  setReadBook: (id: string) => void;
+  setPageInput: (v: string) => void;
+  declarePage: () => void;
+  setNotePage: (v: string) => void;
+  setNoteText: (v: string) => void;
+  addNote: () => void;
 
   ping: (msg: string) => void;
   restoreSession: () => Promise<void>;
@@ -163,6 +177,14 @@ export const useStore = create<AppState>((set, get) => ({
   yearGoal: 0,
 
   journalEntries: [],
+
+  readBook: "",
+  readers: [],
+  myPage: 0,
+  pageInput: "",
+  notes: [],
+  notePage: "",
+  noteText: "",
 
   query: "",
   results: [],
@@ -563,6 +585,26 @@ export const useStore = create<AppState>((set, get) => ({
       body: JSON.stringify({ shareCode: code }),
     }).catch(() => {});
     get().ping(`Code de partage : ${code}`);
+  },
+
+  // ── Sync / Lecture partagée ──
+  setReadBook(id) { set({ readBook: id, myPage: 0, pageInput: "", notes: [] }); },
+  setPageInput(v) { set({ pageInput: v }); },
+  declarePage() {
+    const p = parseInt(get().pageInput, 10);
+    if (!p || p < 0) return;
+    set({ myPage: p, pageInput: "" });
+  },
+  setNotePage(v) { set({ notePage: v }); },
+  setNoteText(v) { set({ noteText: v }); },
+  addNote() {
+    const { notePage, noteText, notes } = get();
+    const page = parseInt(notePage, 10);
+    if (!page || !noteText.trim()) return;
+    const now = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    const note: SyncNote = { page, who: "Moi", text: noteText.trim(), when: now };
+    set({ notes: [...notes, note].sort((a, z) => a.page - z.page), notePage: "", noteText: "" });
+    get().ping("Note scellée 🔒");
   },
 
   // ── Toast ──

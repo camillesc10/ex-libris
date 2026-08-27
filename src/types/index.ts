@@ -1,7 +1,20 @@
 export type Theme = "constelle" | "velin";
 export type Layout = "colonnes" | "immersif";
 export type Flow = "fil" | "jalons";
-export type Screen = "shelf" | "search" | "lists" | "activity" | "journal" | "timeline" | "series" | "me" | "profile";
+export type Screen = "shelf" | "search" | "lists" | "activity" | "journal" | "timeline" | "series" | "me" | "profile" | "sync";
+
+export interface SyncNote {
+  page: number;
+  who: string;
+  text: string;
+  when: string;
+}
+
+export interface SyncReader {
+  name: string;
+  page: number;
+  color: string;
+}
 
 export interface Platform {
   name: string;

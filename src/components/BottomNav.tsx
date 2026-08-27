@@ -6,7 +6,7 @@ const TABS: { key: Screen; label: string; screens: Screen[] }[] = [
   { key: "shelf",    label: "Étagère",   screens: ["shelf", "series", "lists"] },
   { key: "search",   label: "Recherche", screens: ["search"] },
   { key: "journal",  label: "Journal",   screens: ["journal", "timeline"] },
-  { key: "activity", label: "Activité",  screens: ["activity", "profile"] },
+  { key: "sync",     label: "Ensemble",  screens: ["sync", "activity", "profile"] },
   { key: "me",       label: "Moi",       screens: ["me"] },
 ];
 
@@ -41,10 +41,13 @@ function JournalIcon({ active }: { active: boolean }) {
   );
 }
 
-function ActivityIcon({ active }: { active: boolean }) {
+function SyncIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 12 h3 l2.5 -5 l3 10 l2.5 -7 l2 4 h3" fill="none" stroke={active ? "var(--accent)" : "currentColor"} />
+      <circle cx="9" cy="12" r="5" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.15 : 0} />
+      <circle cx="15" cy="12" r="5" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.15 : 0} />
+      <path d="M9 7 a5 5 0 0 1 0 10" stroke={active ? "var(--accent)" : "currentColor"} />
+      <path d="M15 7 a5 5 0 0 0 0 10" stroke={active ? "var(--accent)" : "currentColor"} />
     </svg>
   );
 }
@@ -59,11 +62,11 @@ function MeIcon({ active }: { active: boolean }) {
 }
 
 const ICONS = {
-  shelf:    ShelfIcon,
-  search:   SearchIcon,
-  journal:  JournalIcon,
-  activity: ActivityIcon,
-  me:       MeIcon,
+  shelf:   ShelfIcon,
+  search:  SearchIcon,
+  journal: JournalIcon,
+  sync:    SyncIcon,
+  me:      MeIcon,
 } as const;
 
 export default function BottomNav() {
