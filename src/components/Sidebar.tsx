@@ -179,28 +179,6 @@ export default function Sidebar() {
           )}
         </div>
 
-        {/* Theme picker */}
-        <div>
-          <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 9, padding: "0 12px" }}>
-            Ambiance
-          </div>
-          <div style={{ display: "flex", gap: 8, padding: "0 12px" }}>
-            {THEMES.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTheme(t.key)}
-                title={t.label}
-                style={{
-                  width: 26, height: 26, borderRadius: "50%", background: t.swatch,
-                  border: `2px solid ${theme === t.key ? "var(--accent)" : "transparent"}`,
-                  outline: theme === t.key ? "2px solid var(--accent)" : "none",
-                  outlineOffset: 2,
-                  transition: "border-color .12s, outline .12s",
-                }}
-              />
-            ))}
-          </div>
-        </div>
 
         {/* User card */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: "var(--surface2)" }}>
