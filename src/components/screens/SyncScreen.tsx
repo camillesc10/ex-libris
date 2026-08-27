@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/store";
+import type { SyncNote } from "@/types";
 
 export default function SyncScreen() {
   const {
@@ -10,6 +11,22 @@ export default function SyncScreen() {
   } = useStore();
 
   const [bookSearch, setBookSearch] = useState("");
+
+  // Auto-select the current "En cours" book on first mount
+  useEffect(() => {
+    if (readBook) return;
+    const enCours = books.find((b) => b.lists.includes("En cours"));
+    if (!enCours) return;
+    setReadBook(enCours.id);
+    // Pre-load sealed notes from book.pageNotes
+    const syncNotes: SyncNote[] = (enCours.pageNotes ?? []).map((n) => ({
+      page: n.page, who: "Moi", text: n.text, when: n.date ?? "",
+    }));
+    if (syncNotes.length) {
+      useStore.setState({ notes: syncNotes });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books]);
 
   const rb = books.find((b) => b.id === readBook);
   const totalPages = rb?.pages ?? 640;

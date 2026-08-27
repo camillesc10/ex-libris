@@ -588,22 +588,34 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // ── Sync / Lecture partagée ──
-  setReadBook(id) { set({ readBook: id, myPage: 0, pageInput: "", notes: [] }); },
+  setReadBook(id) {
+    const book = get().books.find((b) => b.id === id);
+    set({ readBook: id, myPage: book?.page ?? 0, pageInput: "", notes: [] });
+  },
   setPageInput(v) { set({ pageInput: v }); },
   declarePage() {
     const p = parseInt(get().pageInput, 10);
     if (!p || p < 0) return;
+    const { readBook } = get();
     set({ myPage: p, pageInput: "" });
+    if (readBook) get().patchBook(readBook, (b) => ({ ...b, page: p }));
   },
   setNotePage(v) { set({ notePage: v }); },
   setNoteText(v) { set({ noteText: v }); },
   addNote() {
-    const { notePage, noteText, notes } = get();
+    const { notePage, noteText, notes, readBook } = get();
     const page = parseInt(notePage, 10);
     if (!page || !noteText.trim()) return;
     const now = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
     const note: SyncNote = { page, who: "Moi", text: noteText.trim(), when: now };
     set({ notes: [...notes, note].sort((a, z) => a.page - z.page), notePage: "", noteText: "" });
+    if (readBook) {
+      get().patchBook(readBook, (b) => ({
+        ...b,
+        pageNotes: [...(b.pageNotes ?? []), { page, text: noteText.trim(), date: new Date().toISOString().slice(0, 10) }]
+          .sort((a, z) => a.page - z.page),
+      }));
+    }
     get().ping("Note scellée 🔒");
   },
 
