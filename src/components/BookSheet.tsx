@@ -21,6 +21,7 @@ function BookSheetContent({ book }: { book: Book }) {
     ping,
   } = useStore();
 
+  const [genreDraft, setGenreDraft] = useState("");
   const [tropeDraft, setTropeDraft] = useState("");
   const [platformDraft, setPlatformDraft] = useState("");
   const [burst, setBurst] = useState(false);
@@ -83,12 +84,12 @@ function BookSheetContent({ book }: { book: Book }) {
     };
     img.src = url;
   }
-  function toggleGenre(g: string) {
-    patch((b) => {
-      const gs = b.genres ?? [];
-      return { ...b, genres: gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g] };
-    });
+  function addGenre(name: string) {
+    if (!name.trim()) return;
+    if (!(book.genres ?? []).includes(name.trim())) patch((b) => ({ ...b, genres: [...(b.genres ?? []), name.trim()] }));
+    setGenreDraft("");
   }
+  function removeGenre(name: string) { patch((b) => ({ ...b, genres: (b.genres ?? []).filter((g) => g !== name) })); }
   function addTrope(name: string) {
     if (!book.tropes.includes(name)) patch((b) => ({ ...b, tropes: [...b.tropes, name] }));
     setTropeDraft("");
@@ -150,6 +151,10 @@ function BookSheetContent({ book }: { book: Book }) {
     setShowCoverPicker(false);
     ping(coverUrl ? "Couverture appliquée ✓" : "Infos appliquées (pas de couverture disponible).");
   }
+
+  const genreSuggestions = GENRES.filter(
+    (g) => !(book.genres ?? []).includes(g) && (genreDraft === "" || g.toLowerCase().includes(genreDraft.toLowerCase()))
+  ).slice(0, 8);
 
   const tropeSuggestions = TROPES.filter(
     (t) => !book.tropes.includes(t) && (tropeDraft === "" || t.toLowerCase().includes(tropeDraft.toLowerCase()))
@@ -437,12 +442,27 @@ function BookSheetContent({ book }: { book: Book }) {
               {/* Genre */}
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
                 <div style={labelStyle}>Genre</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                  {[...new Set([...GENRES, ...(book.genres ?? [])])].map((g) => {
-                    const active = (book.genres ?? []).includes(g);
-                    return <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 12.5, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`, background: active ? "var(--soft)" : "transparent", color: active ? "var(--accent)" : "var(--ink)" }}>{g}</button>;
-                  })}
-                </div>
+                {(book.genres ?? []).length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 14 }}>
+                    {(book.genres ?? []).map((g) => (
+                      <span key={g} style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 8px 6px 12px", borderRadius: 999, background: "var(--soft)", color: "var(--accent)", fontSize: 12.5 }}>
+                        {g}
+                        <button onClick={() => removeGenre(g)} style={{ fontSize: 11, opacity: 0.6 }}>✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input value={genreDraft} onChange={(e) => setGenreDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && genreDraft.trim()) addGenre(genreDraft.trim()); }} placeholder="Chercher ou inventer un genre…" style={inputStyle} />
+                {genreSuggestions.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 12 }}>
+                    {genreSuggestions.map((g) => (
+                      <button key={g} onClick={() => addGenre(g)} style={{ padding: "6px 11px", borderRadius: 999, border: "1px dashed var(--line)", fontSize: 12.5, color: "var(--muted)" }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--line)"; (e.currentTarget as HTMLElement).style.color = "var(--muted)"; }}
+                      >+ {g}</button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Tropes */}
