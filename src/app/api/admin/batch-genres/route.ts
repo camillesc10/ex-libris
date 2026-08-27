@@ -5,15 +5,13 @@ import { auth } from "@/auth";
 // Mappe les genres Hardcover → nos genres français (tous les genres applicables)
 function mapHardcoverGenres(genres: string[]): string[] {
   const result: string[] = [];
-  const hasRomance = genres.some((g) => /romance/i.test(g));
+  const hasRomance = genres.some((g) => /^romance$/i.test(g));
   const hasFantasy = genres.some((g) => /fantasy|paranormal/i.test(g) || g.toLowerCase() === "fae");
-  const isRomantasy = (hasRomance && hasFantasy) || genres.some((g) => /romantasy/i.test(g));
+  const isRomantasy = genres.some((g) => /romantasy/i.test(g));
 
   if (isRomantasy) result.push("Romantasy");
-  else {
-    if (hasFantasy) result.push("Fantasy");
-    if (hasRomance) result.push("Romance");
-  }
+  if (!isRomantasy && hasFantasy) result.push("Fantasy");
+  if (!isRomantasy && hasRomance) result.push("Romance");
   if (genres.some((g) => /cozy|cosy/i.test(g))) result.push("Cosy mystery");
   if (genres.some((g) => /dystopi/i.test(g))) result.push("Dystopie");
   if (genres.some((g) => /science fiction|sci-fi|space opera/i.test(g))) result.push("SF");
@@ -30,13 +28,11 @@ function mapGoogleCategories(categories: string[], description: string, title: s
   const result: string[] = [];
   const hasRomance = all.includes("romance") || all.includes("love story");
   const hasFantasy = all.includes("fantasy") || all.includes("magic") || all.includes("fae") || all.includes("dragon");
-  const isRomantasy = hasRomance && hasFantasy;
+  const isRomantasy = all.includes("romantasy");
 
   if (isRomantasy) result.push("Romantasy");
-  else {
-    if (hasFantasy) result.push("Fantasy");
-    if (hasRomance) result.push("Romance");
-  }
+  if (!isRomantasy && hasFantasy) result.push("Fantasy");
+  if (!isRomantasy && hasRomance) result.push("Romance");
   if (all.includes("cozy mystery") || all.includes("cosi mystery")) result.push("Cosy mystery");
   if (all.includes("dystopi")) result.push("Dystopie");
   if (all.includes("science fiction") || all.includes("sci-fi") || all.includes("space opera")) result.push("SF");
