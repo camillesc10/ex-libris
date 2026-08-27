@@ -496,6 +496,18 @@ export const useStore = create<AppState>((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nb),
     }).catch(() => {});
+    // Auto-fetch genres + tropes depuis Hardcover après l'ajout
+    fetch(`/api/enrich?title=${encodeURIComponent(r.title)}&author=${encodeURIComponent(r.author)}`)
+      .then((res) => res.json())
+      .then(({ genres, tropes }: { genres: string[]; tropes: string[] }) => {
+        if (!genres.length && !tropes.length) return;
+        get().patchBook(nb.id, (b) => ({
+          ...b,
+          ...(genres.length ? { genres } : {}),
+          ...(tropes.length ? { tropes } : {}),
+        }));
+      })
+      .catch(() => {});
     get().ping(`« ${r.title} » est dans ta PAL. Ajoute le piment et les tropes 🌶`);
   },
 

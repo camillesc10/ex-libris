@@ -438,7 +438,7 @@ function BookSheetContent({ book }: { book: Book }) {
               <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, marginBottom: 16 }}>
                 <div style={labelStyle}>Genre</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                  {GENRES.map((g) => {
+                  {[...new Set([...GENRES, ...(book.genres ?? [])])].map((g) => {
                     const active = (book.genres ?? []).includes(g);
                     return <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 12.5, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`, background: active ? "var(--soft)" : "transparent", color: active ? "var(--accent)" : "var(--ink)" }}>{g}</button>;
                   })}
