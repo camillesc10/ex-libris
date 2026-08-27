@@ -84,6 +84,10 @@ export default function ShelfScreen() {
     if (advFilters.maxPages < 9999 && (b.pages || 0) > advFilters.maxPages) return false;
     if (advFilters.lang && b.lang !== advFilters.lang) return false;
     if (advFilters.year && b.finishedAt && !b.finishedAt.startsWith(advFilters.year)) return false;
+    if (advFilters.platform) {
+      const pq = advFilters.platform.toLowerCase();
+      if (!b.platforms?.some((p) => p.name.toLowerCase().includes(pq))) return false;
+    }
     return true;
   });
 
@@ -430,8 +434,17 @@ export default function ShelfScreen() {
               style={{ width: 76, padding: "6px 8px", border: "1px solid var(--line)", borderRadius: 8, background: "var(--surface2)", fontSize: 13, color: "var(--ink)" }}
             />
           </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "var(--muted)" }}>
+            Où le trouver
+            <input
+              type="text" value={advFilters.platform}
+              onChange={(e) => setAdvFilters({ platform: e.target.value })}
+              placeholder="Kobo, KU…"
+              style={{ width: 120, padding: "6px 8px", border: "1px solid var(--line)", borderRadius: 8, background: "var(--surface2)", fontSize: 13, color: "var(--ink)" }}
+            />
+          </label>
           <button
-            onClick={() => setAdvFilters({ minRating: 0, minPages: 0, maxPages: 9999, lang: "", year: "" })}
+            onClick={() => setAdvFilters({ minRating: 0, minPages: 0, maxPages: 9999, lang: "", year: "", platform: "" })}
             style={{ fontSize: 12, color: "var(--muted)", marginTop: 16, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--line)", background: "transparent" }}
           >
             Réinitialiser

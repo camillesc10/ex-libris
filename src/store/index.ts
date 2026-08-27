@@ -55,7 +55,7 @@ interface AppState {
   librarySearch: string;
   tropeFilter: string | null;
   shelfSort: "default" | "rating" | "pages" | "date" | "alpha";
-  advFilters: { minRating: number; minPages: number; maxPages: number; lang: string; year: string };
+  advFilters: { minRating: number; minPages: number; maxPages: number; lang: string; year: string; platform: string };
   palWaveSize: number;
 
   // Shelf customisation
@@ -156,7 +156,7 @@ export const useStore = create<AppState>((set, get) => ({
   librarySearch: "",
   tropeFilter: null,
   shelfSort: "default",
-  advFilters: { minRating: 0, minPages: 0, maxPages: 9999, lang: "", year: "" },
+  advFilters: { minRating: 0, minPages: 0, maxPages: 9999, lang: "", year: "", platform: "" },
   palWaveSize: 0,
 
   shelfColors: {},
