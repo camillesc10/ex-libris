@@ -3,9 +3,9 @@ import { useStore } from "@/store";
 import type { Screen } from "@/types";
 
 const TABS: { key: Screen; label: string; screens: Screen[] }[] = [
-  { key: "shelf",    label: "Étagère",   screens: ["shelf", "series"] },
+  { key: "shelf",    label: "Étagère",   screens: ["shelf", "series", "lists"] },
   { key: "search",   label: "Recherche", screens: ["search"] },
-  { key: "lists",    label: "Listes",    screens: ["lists"] },
+  { key: "journal",  label: "Journal",   screens: ["journal", "timeline"] },
   { key: "activity", label: "Activité",  screens: ["activity", "profile"] },
   { key: "me",       label: "Moi",       screens: ["me"] },
 ];
@@ -30,13 +30,13 @@ function SearchIcon({ active }: { active: boolean }) {
   );
 }
 
-function ListsIcon({ active }: { active: boolean }) {
+function JournalIcon({ active }: { active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-      <circle cx="6" cy="8" r="1.5" fill={active ? "currentColor" : "none"} />
-      <circle cx="6" cy="12" r="1.5" fill={active ? "currentColor" : "none"} />
-      <circle cx="6" cy="16" r="1.5" fill={active ? "currentColor" : "none"} />
-      <path d="M10 8 h8 M10 12 h8 M10 16 h8" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="3" width="13" height="18" rx="2" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.15 : 0} />
+      <path d="M4 3 h13 a2 2 0 0 1 2 2 v14 a2 2 0 0 1 -2 2 h-13 a2 2 0 0 1 -2 -2 v-14 a2 2 0 0 1 2 -2z" />
+      <path d="M8 8 h8 M8 12 h8 M8 16 h5" stroke={active ? "var(--accent)" : "currentColor"} />
+      <line x1="4.5" y1="3" x2="4.5" y2="21" strokeWidth="2.5" stroke={active ? "var(--accent)" : "currentColor"} />
     </svg>
   );
 }
@@ -61,7 +61,7 @@ function MeIcon({ active }: { active: boolean }) {
 const ICONS = {
   shelf:    ShelfIcon,
   search:   SearchIcon,
-  lists:    ListsIcon,
+  journal:  JournalIcon,
   activity: ActivityIcon,
   me:       MeIcon,
 } as const;
