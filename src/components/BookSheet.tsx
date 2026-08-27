@@ -181,7 +181,7 @@ function BookSheetContent({ book }: { book: Book }) {
 
       <div
         className="animate-slidein max-[820px]:!w-full max-[820px]:!max-w-full"
-        style={{ width: sheetWidth, maxWidth: "96vw", background: "var(--bg)", height: "100vh", overflowY: "auto", overscrollBehavior: "contain", boxShadow: "-24px 0 60px -30px rgba(51,41,31,.5)", position: "relative" }}
+        style={{ width: sheetWidth, maxWidth: "96vw", background: "var(--bg)", height: "100dvh", overflowY: "auto", overscrollBehavior: "contain", boxShadow: "-24px 0 60px -30px rgba(51,41,31,.5)", position: "relative" }}
       >
         {/* Confetti overlay (#104) */}
         {confetti && (
