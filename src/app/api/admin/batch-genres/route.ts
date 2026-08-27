@@ -56,13 +56,12 @@ export async function GET(req: NextRequest) {
   const books = await sql`
     SELECT id, title, author
     FROM books
-    WHERE genre IS NULL OR genre = ''
     ORDER BY title
     LIMIT ${limit} OFFSET ${offset}
   `;
 
   const [{ remaining }] = await sql`
-    SELECT COUNT(*)::int AS remaining FROM books WHERE genre IS NULL OR genre = ''
+    SELECT COUNT(*)::int AS remaining FROM books
   `;
 
   const results: { title: string; genre: string }[] = [];
@@ -79,7 +78,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const stillRemaining = (remaining as number) - updated;
+  const total = remaining as number;
+  const stillRemaining = total - offset - books.length;
 
   return NextResponse.json({
     ok: true,
