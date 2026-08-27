@@ -126,6 +126,7 @@ interface AppState {
 
 
   ping: (msg: string) => void;
+  restoreSession: () => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -276,6 +277,7 @@ export const useStore = create<AppState>((set, get) => ({
         shelfColors: prefsData.shelfColors ?? {},
         yearGoal: prefsData.yearGoal ?? 0,
         currentUserId: meData?.id ?? null,
+        user: meData?.name ?? get().user,
         hydrated: true,
       });
     } catch {
@@ -557,5 +559,16 @@ export const useStore = create<AppState>((set, get) => ({
     if (prev) clearTimeout(prev);
     const timer = setTimeout(() => set({ toast: "", toastTimer: null }), 2600);
     set({ toast: msg, toastTimer: timer });
+  },
+
+  async restoreSession() {
+    if (get().auth) return;
+    const res = await fetch("/api/me");
+    if (!res.ok) return;
+    const me = await res.json();
+    if (me?.id) {
+      set({ auth: true, user: me.name ?? "Lectrice" });
+      get().hydrate();
+    }
   },
 }));
