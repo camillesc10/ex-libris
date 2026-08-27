@@ -6,7 +6,7 @@ export const books = pgTable("books", {
   title: text("title").notNull(),
   author: text("author").notNull(),
   year: text("year").default(""),
-  genre: text("genre").default(""),
+  genres: jsonb("genres").$type<string[]>().default([]),
   lang: text("lang").default(""),
   pages: integer("pages").default(0),
   tropes: jsonb("tropes").$type<string[]>().default([]),

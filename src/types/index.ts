@@ -27,7 +27,7 @@ export interface Book {
   title: string;
   author: string;
   year: string;
-  genre: string;
+  genres: string[];
   lang: string;
   spice: number;
   rating: number;

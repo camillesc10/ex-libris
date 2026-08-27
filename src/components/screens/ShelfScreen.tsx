@@ -67,7 +67,7 @@ export default function ShelfScreen() {
 
   const filtered = books.filter((b) => {
     if (listFilter && !b.lists.includes(listFilter)) return false;
-    if (genre !== "Tous" && b.genre !== genre) return false;
+    if (genre !== "Tous" && !(b.genres?.includes(genre))) return false;
     if (b.spice > maxSpice) return false;
     if (tropeFilter && !b.tropes.includes(tropeFilter)) return false;
     if (librarySearch) {
@@ -91,7 +91,7 @@ export default function ShelfScreen() {
     return true;
   });
 
-  const genresPresent = ["Tous", ...Array.from(new Set(books.map((b) => b.genre)))];
+  const genresPresent = ["Tous", ...Array.from(new Set(books.flatMap((b) => b.genres ?? [])))];
   const tropesPresent = Array.from(new Set(books.flatMap((b) => b.tropes))).slice(0, 12);
   const langsPresent = Array.from(new Set(books.map((b) => b.lang).filter(Boolean)));
   void TROPES;

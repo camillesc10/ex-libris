@@ -169,5 +169,10 @@ export async function GET() {
   // Colonne release_date sur user_books (ajoutée après la migration initiale)
   await sql`ALTER TABLE user_books ADD COLUMN IF NOT EXISTS release_date TEXT`.catch(() => {});
 
+  // genre (text) → genres (jsonb array)
+  await sql`ALTER TABLE books ADD COLUMN IF NOT EXISTS genres JSONB DEFAULT '[]'`.catch(() => {});
+  await sql`UPDATE books SET genres = jsonb_build_array(genre) WHERE genre IS NOT NULL AND genre != '' AND genres = '[]'::jsonb`.catch(() => {});
+  await sql`ALTER TABLE books DROP COLUMN IF EXISTS genre`.catch(() => {});
+
   return NextResponse.json({ ok: true, message: "Tables créées et données migrées." });
 }

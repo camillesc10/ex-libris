@@ -394,7 +394,7 @@ export const useStore = create<AppState>((set, get) => ({
         title: cleanTitle,
         author: cols[iAuthor]?.trim() || "Auteur inconnu",
         year: cols[iYear]?.trim() || "",
-        genre: "Roman", lang: "FR",
+        genres: [], lang: "FR",
         spice: 0,
         rating: Math.min(5, parseInt(cols[iRating] || "0", 10) || 0),
         pages: parseInt(cols[iPages] || "0", 10) || 0,
@@ -484,7 +484,7 @@ export const useStore = create<AppState>((set, get) => ({
     const [bg, ink] = COVER_PALETTE[i % COVER_PALETTE.length];
     const nb: Book = {
       id: crypto.randomUUID(), title: r.title, author: r.author, year: r.year,
-      genre: "Romance", lang: r.lang, spice: 0, rating: 0, pages: r.pages, page: 0,
+      genres: [], lang: r.lang, spice: 0, rating: 0, pages: r.pages, page: 0,
       tropes: [], lists: ["PAL"], resume: r.snippet, comment: "",
       bg, ink, platforms: [{ name: "Kobo", langs: "FR, EN" }],
       ...(r.cover ? { coverUrl: r.cover } : {}),

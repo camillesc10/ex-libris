@@ -2,51 +2,49 @@ import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { auth } from "@/auth";
 
-const GENRES = ["Romantasy", "Romance", "Fantasy", "SF", "Thriller", "Contemporain", "Historique", "Dystopie", "Cosy mystery"] as const;
-type Genre = typeof GENRES[number];
+// Mappe les genres Hardcover → nos genres français (tous les genres applicables)
+function mapHardcoverGenres(genres: string[]): string[] {
+  const result: string[] = [];
+  const hasRomance = genres.some((g) => /romance/i.test(g));
+  const hasFantasy = genres.some((g) => /fantasy|paranormal/i.test(g) || g.toLowerCase() === "fae");
+  const isRomantasy = (hasRomance && hasFantasy) || genres.some((g) => /romantasy/i.test(g));
 
-// Hardcover genre names → nos genres
-function mapHardcoverGenres(genres: string[], title: string, author: string): Genre | "" {
-  const all = [...genres, title, author].join(" ").toLowerCase();
-  const hasRomance = genres.some((g) => g.toLowerCase().includes("romance"));
-  const hasFantasy = genres.some((g) => g.toLowerCase().includes("fantasy") || g.toLowerCase() === "fae" || g.toLowerCase() === "paranormal");
-
-  if (hasRomance && hasFantasy) return "Romantasy";
-  if (genres.some((g) => /cozy|cosy/i.test(g))) return "Cosy mystery";
-  if (genres.some((g) => /dystopi/i.test(g))) return "Dystopie";
-  if (genres.some((g) => /science fiction|sci-fi|space/i.test(g))) return "SF";
-  if (hasFantasy) return "Fantasy";
-  if (genres.some((g) => /thriller|suspense/i.test(g))) return "Thriller";
-  if (genres.some((g) => /histor/i.test(g))) return "Historique";
-  if (genres.some((g) => /contemporary/i.test(g))) return "Contemporain";
-  if (genres.some((g) => /mystery|crime/i.test(g))) return "Thriller";
-  if (hasRomance) return "Romance";
-
-  // Fallback : lecture des mots dans title/author
-  if (all.includes("romantasy")) return "Romantasy";
-  if (all.includes("fantasy") || all.includes("magie") || all.includes("fae")) return "Fantasy";
-  if (all.includes("romance") || all.includes("amour")) return "Romance";
-
-  return "";
+  if (isRomantasy) result.push("Romantasy");
+  else {
+    if (hasFantasy) result.push("Fantasy");
+    if (hasRomance) result.push("Romance");
+  }
+  if (genres.some((g) => /cozy|cosy/i.test(g))) result.push("Cosy mystery");
+  if (genres.some((g) => /dystopi/i.test(g))) result.push("Dystopie");
+  if (genres.some((g) => /science fiction|sci-fi|space opera/i.test(g))) result.push("SF");
+  if (genres.some((g) => /thriller|suspense/i.test(g))) result.push("Thriller");
+  if (genres.some((g) => /histor|victorian|regency|medieval/i.test(g))) result.push("Historique");
+  if (genres.some((g) => /contemporary/i.test(g))) result.push("Contemporain");
+  if (genres.some((g) => /mystery|crime/i.test(g)) && !result.includes("Thriller")) result.push("Thriller");
+  return result;
 }
 
 // Mappe les catégories Google Books → nos genres (fallback)
-function mapGoogleCategories(categories: string[], description: string, title: string, author: string): Genre | "" {
+function mapGoogleCategories(categories: string[], description: string, title: string, author: string): string[] {
   const all = [...categories, description, title, author].join(" ").toLowerCase();
+  const result: string[] = [];
   const hasRomance = all.includes("romance") || all.includes("love story");
   const hasFantasy = all.includes("fantasy") || all.includes("magic") || all.includes("fae") || all.includes("dragon");
+  const isRomantasy = hasRomance && hasFantasy;
 
-  if (hasRomance && hasFantasy) return "Romantasy";
-  if (all.includes("cozy mystery") || all.includes("cosy mystery")) return "Cosy mystery";
-  if (all.includes("dystopi")) return "Dystopie";
-  if (all.includes("science fiction") || all.includes("sci-fi") || all.includes("space opera")) return "SF";
-  if (hasFantasy) return "Fantasy";
-  if (all.includes("thriller") || all.includes("suspense") || all.includes("crime")) return "Thriller";
-  if (all.includes("histor") || all.includes("victorian") || all.includes("regency") || all.includes("medieval")) return "Historique";
-  if (all.includes("contemporary")) return "Contemporain";
-  if (all.includes("mystery")) return "Thriller";
-  if (hasRomance) return "Romance";
-  return "";
+  if (isRomantasy) result.push("Romantasy");
+  else {
+    if (hasFantasy) result.push("Fantasy");
+    if (hasRomance) result.push("Romance");
+  }
+  if (all.includes("cozy mystery") || all.includes("cosi mystery")) result.push("Cosy mystery");
+  if (all.includes("dystopi")) result.push("Dystopie");
+  if (all.includes("science fiction") || all.includes("sci-fi") || all.includes("space opera")) result.push("SF");
+  if (all.includes("thriller") || all.includes("suspense") || all.includes("crime")) result.push("Thriller");
+  if (all.includes("histor") || all.includes("victorian") || all.includes("regency") || all.includes("medieval")) result.push("Historique");
+  if (all.includes("contemporary")) result.push("Contemporain");
+  if (all.includes("mystery") && !result.includes("Thriller")) result.push("Thriller");
+  return result;
 }
 
 async function hcPost(query: string, variables: Record<string, unknown>) {
@@ -68,7 +66,7 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-async function fetchGenreFromHardcover(title: string, author: string): Promise<Genre | ""> {
+async function fetchGenreFromHardcover(title: string, author: string): Promise<string[]> {
   // Étape 1 : recherche — 5 hits pour matcher titre+auteur
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const searchData: any = await hcPost(
@@ -76,7 +74,7 @@ async function fetchGenreFromHardcover(title: string, author: string): Promise<G
     { q: `${title} ${author}` }
   );
   const hits: unknown[] = searchData?.data?.search?.results?.hits ?? [];
-  if (!hits.length) return "";
+  if (!hits.length) return [];
 
   const normTitle = norm(title).slice(0, 12);
   const normAuthor = norm(author).slice(0, 8);
@@ -106,35 +104,35 @@ async function fetchGenreFromHardcover(title: string, author: string): Promise<G
   const genreTags: string[] = (tagData?.data?.books?.[0]?.cached_tags?.Genre ?? []).map((g: any) => g.tag as string);
 
   // Fallback : genres du document de recherche si cached_tags vide
-  const genres = genreTags.length ? genreTags : (best?.document?.genres ?? []);
-  return mapHardcoverGenres(genres, title, author);
+  const rawGenres = genreTags.length ? genreTags : (best?.document?.genres ?? []);
+  return mapHardcoverGenres(rawGenres);
 }
 
-async function fetchGenreFromGoogle(title: string, author: string): Promise<Genre | ""> {
+async function fetchGenreFromGoogle(title: string, author: string): Promise<string[]> {
   try {
     const q = `${title} ${author}`.trim();
     const res = await fetch(
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=1&printType=books`,
       { signal: AbortSignal.timeout(4000) }
     );
-    if (!res.ok) return "";
+    if (!res.ok) return [];
     const data = await res.json();
     const item = data.items?.[0];
-    if (!item) return "";
+    if (!item) return [];
     const categories: string[] = item.volumeInfo?.categories ?? [];
     const description: string = item.volumeInfo?.description ?? "";
     return mapGoogleCategories(categories, description, title, author);
   } catch {
-    return "";
+    return [];
   }
 }
 
-async function fetchGenre(title: string, author: string): Promise<{ genre: Genre | ""; source: string }> {
+async function fetchGenres(title: string, author: string): Promise<{ genres: string[]; source: string }> {
   const hc = await fetchGenreFromHardcover(title, author);
-  if (hc) return { genre: hc, source: "hardcover" };
+  if (hc.length) return { genres: hc, source: "hardcover" };
   const google = await fetchGenreFromGoogle(title, author);
-  if (google) return { genre: google, source: "google" };
-  return { genre: "", source: "—" };
+  if (google.length) return { genres: google, source: "google" };
+  return { genres: [], source: "—" };
 }
 
 export async function GET(req: NextRequest) {
@@ -149,7 +147,7 @@ export async function GET(req: NextRequest) {
   if (debugMode) {
     const title = req.nextUrl.searchParams.get("title") ?? "";
     const author = req.nextUrl.searchParams.get("author") ?? "";
-    const mapped = await fetchGenreFromHardcover(title, author);
+    const mapped = await fetchGenreFromHardcover(title, author); // returns string[]
     // Aussi montrer les hits bruts pour diagnostic
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const searchRaw: any = await hcPost(
@@ -181,17 +179,17 @@ export async function GET(req: NextRequest) {
 
   const [{ total }] = await sql`SELECT COUNT(*)::int AS total FROM books`;
 
-  const results: { title: string; genre: string; source: string }[] = [];
+  const results: { title: string; genres: string[]; source: string }[] = [];
   let updated = 0;
 
   for (const book of books) {
-    const { genre, source } = await fetchGenre(book.title as string, book.author as string);
-    if (genre) {
-      await sql`UPDATE books SET genre = ${genre} WHERE id = ${book.id as string}`;
-      results.push({ title: book.title as string, genre, source });
+    const { genres, source } = await fetchGenres(book.title as string, book.author as string);
+    if (genres.length) {
+      await sql`UPDATE books SET genres = ${JSON.stringify(genres)}::jsonb WHERE id = ${book.id as string}`;
+      results.push({ title: book.title as string, genres, source });
       updated++;
     } else {
-      results.push({ title: book.title as string, genre: "?", source });
+      results.push({ title: book.title as string, genres: [], source });
     }
   }
 

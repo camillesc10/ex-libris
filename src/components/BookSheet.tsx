@@ -83,7 +83,12 @@ function BookSheetContent({ book }: { book: Book }) {
     };
     img.src = url;
   }
-  function setGenre(g: string) { patch((b) => ({ ...b, genre: g })); }
+  function toggleGenre(g: string) {
+    patch((b) => {
+      const gs = b.genres ?? [];
+      return { ...b, genres: gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g] };
+    });
+  }
   function addTrope(name: string) {
     if (!book.tropes.includes(name)) patch((b) => ({ ...b, tropes: [...b.tropes, name] }));
     setTropeDraft("");
@@ -372,7 +377,7 @@ function BookSheetContent({ book }: { book: Book }) {
             {/* Right column */}
             <div style={{ minWidth: 0 }}>
               <div style={{ marginBottom: 22 }}>
-                  <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 10 }}>{book.genre} · {book.year} · {book.lang}</div>
+                  <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 10 }}>{(book.genres ?? []).join(" · ") || null}{book.year ? ` · ${book.year}` : ""} · {book.lang}</div>
                   <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 30, lineHeight: 1.15, letterSpacing: ".02em", textWrap: "pretty" }}>{book.title}</div>
                   <div style={{ fontSize: 15, color: "var(--muted)", marginTop: 7 }}>{book.author}</div>
                 </div>
@@ -434,8 +439,8 @@ function BookSheetContent({ book }: { book: Book }) {
                 <div style={labelStyle}>Genre</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                   {GENRES.map((g) => {
-                    const active = book.genre === g;
-                    return <button key={g} onClick={() => setGenre(g)} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 12.5, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`, background: active ? "var(--soft)" : "transparent", color: active ? "var(--accent)" : "var(--ink)" }}>{g}</button>;
+                    const active = (book.genres ?? []).includes(g);
+                    return <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 12.5, border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`, background: active ? "var(--soft)" : "transparent", color: active ? "var(--accent)" : "var(--ink)" }}>{g}</button>;
                   })}
                 </div>
               </div>

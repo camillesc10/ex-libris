@@ -26,7 +26,7 @@ export async function GET() {
           title: b.title,
           author: b.author,
           year: b.year ?? "",
-          genre: b.genre ?? "",
+          genres: b.genres ?? [],
           lang: b.lang ?? "",
           pages: b.pages ?? 0,
           series: b.series,
@@ -75,9 +75,9 @@ export async function POST(req: Request) {
   try {
     const db = getDb();
     const book = await req.json();
-    const { id, title, author, year, genre, lang, pages, series, seriesNum, coverUrl, bg, ink, ...rest } = book;
+    const { id, title, author, year, genres, lang, pages, series, seriesNum, coverUrl, bg, ink, ...rest } = book;
 
-    await db.insert(booksTable).values({ id, title, author, year, genre, lang, pages, series, seriesNum, coverUrl, bg: bg ?? "#1E1B4B", ink: ink ?? "#E8E3F0", tropes: rest.tropes ?? [] }).onConflictDoNothing();
+    await db.insert(booksTable).values({ id, title, author, year, genres: genres ?? [], lang, pages, series, seriesNum, coverUrl, bg: bg ?? "#1E1B4B", ink: ink ?? "#E8E3F0", tropes: rest.tropes ?? [] }).onConflictDoNothing();
     await db.insert(userBooksTable).values({
       id: crypto.randomUUID(),
       userId,

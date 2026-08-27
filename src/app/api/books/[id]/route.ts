@@ -5,7 +5,7 @@ import { books as booksTable, userBooks as userBooksTable } from "@/lib/schema";
 import { auth } from "@/auth";
 import { createEvent } from "@/lib/events";
 
-const BOOK_FIELDS = new Set(["title", "author", "year", "genre", "lang", "pages", "series", "seriesNum", "coverUrl", "tropes"]);
+const BOOK_FIELDS = new Set(["title", "author", "year", "genres", "lang", "pages", "series", "seriesNum", "coverUrl", "tropes"]);
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
