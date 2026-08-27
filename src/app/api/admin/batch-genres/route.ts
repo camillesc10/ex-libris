@@ -147,14 +147,42 @@ export async function GET(req: NextRequest) {
   if (debugMode) {
     const title = req.nextUrl.searchParams.get("title") ?? "";
     const author = req.nextUrl.searchParams.get("author") ?? "";
-    const mapped = await fetchGenreFromHardcover(title, author); // returns string[]
-    // Aussi montrer les hits bruts pour diagnostic
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const searchRaw: any = await hcPost(
       `query($q: String!) { search(query: $q, query_type: "Book", per_page: 5) { results } }`,
       { q: `${title} ${author}` }
     );
     const hits = searchRaw?.data?.search?.results?.hits ?? [];
+    const normT = norm(title).slice(0, 12);
+    const normA = norm(author).slice(0, 8);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const matchTitleAuthor = (h: any) =>
+      norm(h.document?.title ?? "").includes(normT) &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normA));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const matchAuthor = (h: any) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normA));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const best: any = hits.find(matchTitleAuthor) ?? hits.find(matchAuthor) ?? hits[0];
+    const bookId = best?.document?.id ? parseInt(best.document.id) : null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cachedTags: any = null;
+    if (bookId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tagData: any = await hcPost(
+        `query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { cached_tags } }`,
+        { id: bookId }
+      );
+      cachedTags = tagData?.data?.books?.[0]?.cached_tags ?? null;
+    }
+
+    const genreTags: string[] = (cachedTags?.Genre ?? []).map((g: { tag: string }) => g.tag);
+    const rawGenres = genreTags.length ? genreTags : (best?.document?.genres ?? []);
+    const mapped = mapHardcoverGenres(rawGenres);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const summary = hits.map((h: any) => ({
       id: h.document?.id,
@@ -162,7 +190,7 @@ export async function GET(req: NextRequest) {
       authors: h.document?.author_names,
       genres: h.document?.genres,
     }));
-    return NextResponse.json({ mapped, summary });
+    return NextResponse.json({ mapped, bestHit: { id: bookId, title: best?.document?.title }, genreTags, cachedTags, rawGenres, summary });
   }
 
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "20"), 40);
