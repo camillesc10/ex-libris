@@ -81,6 +81,15 @@ export const userPrefs = pgTable("user_prefs", {
   myPage: integer("my_page").default(0),
 });
 
+export const activityEvents = pgTable("activity_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  bookId: text("book_id").notNull(),
+  type: text("type").notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().default({}),
+  createdAt: text("created_at").notNull(),
+});
+
 export const tropesCatalog = pgTable("tropes_catalog", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

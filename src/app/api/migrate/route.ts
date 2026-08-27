@@ -156,5 +156,19 @@ export async function GET() {
   // Unicité du pseudo sur users
   await sql`ALTER TABLE users ADD CONSTRAINT users_name_unique UNIQUE (name)`.catch(() => {});
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS activity_events (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL,
+      book_id     TEXT NOT NULL,
+      type        TEXT NOT NULL,
+      payload     JSONB DEFAULT '{}',
+      created_at  TEXT NOT NULL
+    )
+  `;
+
+  // Colonne release_date sur user_books (ajoutée après la migration initiale)
+  await sql`ALTER TABLE user_books ADD COLUMN IF NOT EXISTS release_date TEXT`.catch(() => {});
+
   return NextResponse.json({ ok: true, message: "Tables créées et données migrées." });
 }

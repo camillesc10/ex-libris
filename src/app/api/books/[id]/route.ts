@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { books as booksTable, userBooks as userBooksTable } from "@/lib/schema";
 import { auth } from "@/auth";
+import { createEvent } from "@/lib/events";
 
 const BOOK_FIELDS = new Set(["title", "author", "year", "genre", "lang", "pages", "series", "seriesNum", "coverUrl", "tropes"]);
 
@@ -23,6 +24,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       else userBookData[k] = v;
     }
 
+    // Read current state to detect meaningful transitions
+    const [current] = await db
+      .select({ lists: userBooksTable.lists, rating: userBooksTable.rating })
+      .from(userBooksTable)
+      .where(and(eq(userBooksTable.bookId, id), eq(userBooksTable.userId, userId)))
+      .limit(1);
+
     if (Object.keys(bookData).length > 0) {
       await db.update(booksTable).set(bookData).where(eq(booksTable.id, id));
     }
@@ -31,6 +39,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         .set(userBookData)
         .where(and(eq(userBooksTable.bookId, id), eq(userBooksTable.userId, userId)));
     }
+
+    if (current) {
+      const oldLists = (current.lists as string[]) ?? [];
+      const newLists = (userBookData.lists as string[] | undefined) ?? oldLists;
+      const oldRating = current.rating ?? 0;
+      const newRating = (userBookData.rating as number | undefined) ?? oldRating;
+
+      if (!oldLists.includes("Déjà lu") && newLists.includes("Déjà lu")) {
+        await createEvent(db, userId, id, "book_finished", { rating: newRating });
+      } else if (!oldLists.includes("Abandonné") && newLists.includes("Abandonné")) {
+        await createEvent(db, userId, id, "book_abandoned");
+      } else if (oldRating === 0 && newRating > 0) {
+        await createEvent(db, userId, id, "rating_given", { rating: newRating });
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
