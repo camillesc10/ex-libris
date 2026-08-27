@@ -96,15 +96,15 @@ export async function GET(req: NextRequest) {
 
   const sql = neon(dbUrl);
 
-  const books = await sql`
-    SELECT id, title, author
-    FROM books
-    WHERE genres = '[]'::jsonb OR genres IS NULL
-    ORDER BY title
-    LIMIT ${limit} OFFSET ${offset}
-  `;
+  const force = req.nextUrl.searchParams.get("force") === "1";
 
-  const [{ total }] = await sql`SELECT COUNT(*)::int AS total FROM books WHERE genres = '[]'::jsonb OR genres IS NULL`;
+  const books = force
+    ? await sql`SELECT id, title, author FROM books ORDER BY title LIMIT ${limit} OFFSET ${offset}`
+    : await sql`SELECT id, title, author FROM books WHERE genres = '[]'::jsonb OR genres IS NULL ORDER BY title LIMIT ${limit} OFFSET ${offset}`;
+
+  const [{ total }] = force
+    ? await sql`SELECT COUNT(*)::int AS total FROM books`
+    : await sql`SELECT COUNT(*)::int AS total FROM books WHERE genres = '[]'::jsonb OR genres IS NULL`;
 
   const results: { title: string; genres: string[]; source: string }[] = [];
   let updated = 0;
