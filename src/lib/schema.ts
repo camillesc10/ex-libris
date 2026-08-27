@@ -84,5 +84,4 @@ export const userPrefs = pgTable("user_prefs", {
 export const tropesCatalog = pgTable("tropes_catalog", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  category: text("category").notNull(),
 });

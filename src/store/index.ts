@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import type {
   Theme, Layout, Flow, Screen,
-  Book, BookList, SealedNote, Reader, SearchResult,
+  Book, BookList, SearchResult,
 } from "@/types";
 
 function parseCSVRow(row: string): string[] {
@@ -18,7 +18,7 @@ function parseCSVRow(row: string): string[] {
   return result;
 }
 import {
-  SEED_BOOKS, SEED_LISTS, SEED_NOTES, SEED_READERS,
+  SEED_BOOKS, SEED_LISTS,
   COVER_PALETTE,
 } from "./data";
 import type { JournalEntry } from "@/types";
@@ -70,15 +70,6 @@ interface AppState {
   source: string;
   added: string[];
 
-  // Shared reading
-  readBook: string;
-  readers: Reader[];
-  invites: string[];
-  myPage: number;
-  pageInput: string;
-  notes: SealedNote[];
-  notePage: string;
-  noteText: string;
 
   // Persistence
   hydrated: boolean;
@@ -130,14 +121,6 @@ interface AppState {
 
   addJournalEntry: (e: Omit<JournalEntry, "id" | "date">) => void;
 
-  setReadBook: (id: string) => void;
-  toggleInvite: (name: string) => void;
-  launchRead: () => void;
-  setPageInput: (v: string) => void;
-  declarePage: () => void;
-  setNotePage: (v: string) => void;
-  setNoteText: (v: string) => void;
-  addNote: () => void;
 
   ping: (msg: string) => void;
 }
@@ -181,14 +164,6 @@ export const useStore = create<AppState>((set, get) => ({
   source: "",
   added: [],
 
-  readBook: "",
-  readers: SEED_READERS.map((r) => ({ ...r })),
-  invites: [],
-  myPage: 0,
-  pageInput: "",
-  notes: [...SEED_NOTES],
-  notePage: "",
-  noteText: "",
 
   hydrated: false,
 
@@ -273,24 +248,18 @@ export const useStore = create<AppState>((set, get) => ({
   async hydrate() {
     if (get().hydrated) return;
     try {
-      const [br, lr, nr, jr, pr] = await Promise.all([
+      const [br, lr, jr, pr] = await Promise.all([
         fetch("/api/books"), fetch("/api/lists"),
-        fetch("/api/notes"), fetch("/api/journal"), fetch("/api/prefs"),
+        fetch("/api/journal"), fetch("/api/prefs"),
       ]);
-      const [booksData, listsData, notesRaw, journalData, prefsData] = await Promise.all([
-        br.json(), lr.json(), nr.json(), jr.json(), pr.json(),
+      const [booksData, listsData, journalData, prefsData] = await Promise.all([
+        br.json(), lr.json(), jr.json(), pr.json(),
       ]);
-      const notes = (notesRaw as { page: number; who: string; noteText: string; when: string }[]).map(
-        (n) => ({ page: n.page, who: n.who, text: n.noteText, when: n.when })
-      );
       set({
         books: booksData, lists: listsData,
-        notes, journalEntries: journalData,
+        journalEntries: journalData,
         shelfColors: prefsData.shelfColors ?? {},
         yearGoal: prefsData.yearGoal ?? 0,
-        readBook: prefsData.readBook ?? "",
-        myPage: prefsData.myPage ?? 0,
-        pageInput: String(prefsData.myPage || ""),
         hydrated: true,
       });
     } catch {
@@ -540,58 +509,6 @@ export const useStore = create<AppState>((set, get) => ({
       body: JSON.stringify({ shareCode: code }),
     }).catch(() => {});
     get().ping(`Code de partage : ${code}`);
-  },
-
-  // ── Shared reading ──
-  setReadBook: (id) => {
-    set({ readBook: id });
-    fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ readBook: id }) }).catch(() => {});
-  },
-
-  toggleInvite(name) {
-    set((s) => ({
-      invites: s.invites.includes(name)
-        ? s.invites.filter((n) => n !== name)
-        : [...s.invites, name],
-    }));
-  },
-
-  launchRead() {
-    const { readBook, invites, books } = get();
-    const book = books.find((b) => b.id === readBook);
-    if (!book || !invites.length) return;
-    const label = invites.length === 1 ? `à deux avec ${invites[0]}` : `à ${invites.length + 1} avec ${invites.join(", ")}`;
-    get().ping(`Lecture partagée lancée — ${label} 📖`);
-  },
-
-  setPageInput: (v) => set({ pageInput: v }),
-
-  declarePage() {
-    const page = parseInt(get().pageInput, 10);
-    if (isNaN(page) || page < 0) return;
-    const prev = get().myPage;
-    set({ myPage: page });
-    fetch("/api/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ myPage: page }) }).catch(() => {});
-    const unlocked = get().notes.filter((n) => n.page <= page && n.page > prev);
-    if (unlocked.length) get().ping(`${unlocked.length} note(s) débloquée(s) 🔓`);
-  },
-
-  setNotePage: (v) => set({ notePage: v }),
-  setNoteText: (v) => set({ noteText: v }),
-
-  addNote() {
-    const { notePage, noteText } = get();
-    const page = parseInt(notePage, 10);
-    if (isNaN(page) || !noteText.trim()) return;
-    const id = `n${Date.now()}`;
-    const text = noteText.trim();
-    const note: SealedNote = { page, who: "Moi", text, when: "maintenant" };
-    set((s) => ({ notes: [...s.notes, note].sort((a, b) => a.page - b.page), noteText: "" }));
-    fetch("/api/notes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, page, who: "Moi", noteText: text, when: "maintenant" }),
-    }).catch(() => {});
   },
 
   // ── Toast ──

@@ -150,5 +150,11 @@ export async function GET() {
     `;
   }
 
+  // Nettoyage tropes_catalog : supprimer la colonne category (inutilisée)
+  await sql`ALTER TABLE tropes_catalog DROP COLUMN IF EXISTS category`;
+
+  // Unicité du pseudo sur users
+  await sql`ALTER TABLE users ADD CONSTRAINT users_name_unique UNIQUE (name)`.catch(() => {});
+
   return NextResponse.json({ ok: true, message: "Tables créées et données migrées." });
 }

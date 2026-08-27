@@ -8,8 +8,7 @@ import BottomNav from "./BottomNav";
 import ShelfScreen from "./screens/ShelfScreen";
 import SearchScreen from "./screens/SearchScreen";
 import ListsScreen from "./screens/ListsScreen";
-import SyncScreen from "./screens/SyncScreen";
-import AuthorsScreen from "./screens/AuthorsScreen";
+import ActivityScreen from "./screens/ActivityScreen";
 import JournalScreen from "./screens/JournalScreen";
 import TimelineScreen from "./screens/TimelineScreen";
 import SeriesScreen from "./screens/SeriesScreen";
@@ -51,14 +50,13 @@ export default function AppShell() {
 
 function ScreenContent({ screen }: { screen: Screen }) {
   switch (screen) {
-    case "shelf": return <ShelfScreen />;
-    case "search": return <SearchScreen />;
-    case "lists": return <ListsScreen />;
-    case "sync": return <SyncScreen />;
-    case "authors": return <AuthorsScreen />;
-    case "journal": return <JournalScreen />;
+    case "shelf":    return <ShelfScreen />;
+    case "search":   return <SearchScreen />;
+    case "lists":    return <ListsScreen />;
+    case "activity": return <ActivityScreen />;
+    case "journal":  return <JournalScreen />;
     case "timeline": return <TimelineScreen />;
-    case "series": return <SeriesScreen />;
-    case "me": return <MeScreen />;
+    case "series":   return <SeriesScreen />;
+    case "me":       return <MeScreen />;
   }
 }

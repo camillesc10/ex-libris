@@ -1,7 +1,7 @@
 export type Theme = "constelle" | "velin";
 export type Layout = "colonnes" | "immersif";
 export type Flow = "fil" | "jalons";
-export type Screen = "shelf" | "search" | "lists" | "sync" | "authors" | "journal" | "timeline" | "series" | "me";
+export type Screen = "shelf" | "search" | "lists" | "activity" | "journal" | "timeline" | "series" | "me";
 
 export interface Platform {
   name: string;
@@ -60,19 +60,6 @@ export interface BookList {
   dot: string;
   desc: string;
   shareCode?: string;
-}
-
-export interface SealedNote {
-  page: number;
-  who: string;
-  text: string;
-  when: string;
-}
-
-export interface Reader {
-  name: string;
-  page: number;
-  color: string;
 }
 
 export interface SearchResult {

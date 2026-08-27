@@ -9,7 +9,7 @@ export async function GET() {
     const tropes = await db
       .select()
       .from(tropesCatalog)
-      .orderBy(asc(tropesCatalog.category), asc(tropesCatalog.name));
+      .orderBy(asc(tropesCatalog.name));
     return NextResponse.json(tropes);
   } catch {
     return NextResponse.json({ error: "Failed to fetch tropes" }, { status: 500 });

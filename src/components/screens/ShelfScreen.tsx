@@ -329,16 +329,6 @@ export default function ShelfScreen() {
             >
               Mes sagas
             </button>
-            <button
-              onClick={() => navigate("authors")}
-              style={{
-                padding: "14px", borderRadius: 14, border: "1px solid var(--line)",
-                background: "var(--surface)", fontSize: 13.5, fontWeight: 500,
-                color: "var(--ink)", cursor: "pointer",
-              }}
-            >
-              Par auteur
-            </button>
           </div>
         </div>
       </div>

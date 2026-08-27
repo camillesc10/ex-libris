@@ -5,7 +5,6 @@ import { useStore } from "@/store";
 const STAT_LINKS = [
   { label: "Mes collections", screen: "lists" as const },
   { label: "Mes sagas", screen: "series" as const },
-  { label: "Par auteur", screen: "authors" as const },
 ];
 
 export default function MeScreen() {

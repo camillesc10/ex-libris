@@ -3,10 +3,11 @@ import { useStore } from "@/store";
 import type { Screen } from "@/types";
 
 const TABS: { key: Screen; label: string; screens: Screen[] }[] = [
-  { key: "shelf", label: "Étagère", screens: ["shelf", "search", "lists", "series", "authors"] },
-  { key: "sync", label: "Lecture partagée", screens: ["sync"] },
-  { key: "journal", label: "Journal", screens: ["journal", "timeline"] },
-  { key: "me", label: "Moi", screens: ["me"] },
+  { key: "shelf",    label: "Étagère",   screens: ["shelf", "series"] },
+  { key: "search",   label: "Recherche", screens: ["search"] },
+  { key: "lists",    label: "Listes",    screens: ["lists"] },
+  { key: "activity", label: "Activité",  screens: ["activity"] },
+  { key: "me",       label: "Moi",       screens: ["me"] },
 ];
 
 function ShelfIcon({ active }: { active: boolean }) {
@@ -20,22 +21,30 @@ function ShelfIcon({ active }: { active: boolean }) {
   );
 }
 
-function SyncIcon({ active }: { active: boolean }) {
+function SearchIcon({ active }: { active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
-      <path d="M12 7.4 C10.3 6 8 5.6 5 5.9 v10.4 c3-.3 5.3.1 7 1.5" />
-      <path d="M12 7.4 C13.7 6 16 5.6 19 5.9 v10.4 c-3-.3-5.3.1-7 1.5" />
-      <path d="M12 7.4 v10.4" strokeLinecap="round" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+      <circle cx="10.5" cy="10.5" r="5.5" fill={active ? "currentColor" : "none"} />
+      <path d="M15 15 l4.5 4.5" />
     </svg>
   );
 }
 
-function JournalIcon({ active }: { active: boolean }) {
+function ListsIcon({ active }: { active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6.5 4.5 h8.6 a2.4 2.4 0 0 1 2.4 2.4 v12.6 h-11 a1.5 1.5 0 0 1 -1.5 -1.5 v-12 a1.5 1.5 0 0 1 1.5 -1.5 z" />
-      <path d="M5 17.8 h12.5" fill="none" />
-      <path d="M9 8.4 h5.4 M9 11.5 h3.6" fill="none" style={{ stroke: active ? "var(--surface)" : "currentColor" }} />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+      <circle cx="6" cy="8" r="1.5" fill={active ? "currentColor" : "none"} />
+      <circle cx="6" cy="12" r="1.5" fill={active ? "currentColor" : "none"} />
+      <circle cx="6" cy="16" r="1.5" fill={active ? "currentColor" : "none"} />
+      <path d="M10 8 h8 M10 12 h8 M10 16 h8" />
+    </svg>
+  );
+}
+
+function ActivityIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12 h3 l2.5 -5 l3 10 l2.5 -7 l2 4 h3" fill="none" stroke={active ? "var(--accent)" : "currentColor"} />
     </svg>
   );
 }
@@ -50,10 +59,11 @@ function MeIcon({ active }: { active: boolean }) {
 }
 
 const ICONS = {
-  shelf: ShelfIcon,
-  sync: SyncIcon,
-  journal: JournalIcon,
-  me: MeIcon,
+  shelf:    ShelfIcon,
+  search:   SearchIcon,
+  lists:    ListsIcon,
+  activity: ActivityIcon,
+  me:       MeIcon,
 } as const;
 
 export default function BottomNav() {
