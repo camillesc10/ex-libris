@@ -6,7 +6,7 @@ const TABS: { key: Screen; label: string; screens: Screen[] }[] = [
   { key: "shelf",    label: "Étagère",   screens: ["shelf", "series"] },
   { key: "search",   label: "Recherche", screens: ["search"] },
   { key: "lists",    label: "Listes",    screens: ["lists"] },
-  { key: "activity", label: "Activité",  screens: ["activity"] },
+  { key: "activity", label: "Activité",  screens: ["activity", "profile"] },
   { key: "me",       label: "Moi",       screens: ["me"] },
 ];
 

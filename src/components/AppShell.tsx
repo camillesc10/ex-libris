@@ -9,6 +9,7 @@ import ShelfScreen from "./screens/ShelfScreen";
 import SearchScreen from "./screens/SearchScreen";
 import ListsScreen from "./screens/ListsScreen";
 import ActivityScreen from "./screens/ActivityScreen";
+import ProfileScreen from "./screens/ProfileScreen";
 import JournalScreen from "./screens/JournalScreen";
 import TimelineScreen from "./screens/TimelineScreen";
 import SeriesScreen from "./screens/SeriesScreen";
@@ -58,5 +59,6 @@ function ScreenContent({ screen }: { screen: Screen }) {
     case "timeline": return <TimelineScreen />;
     case "series":   return <SeriesScreen />;
     case "me":       return <MeScreen />;
+    case "profile":  return <ProfileScreen />;
   }
 }

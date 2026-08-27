@@ -272,7 +272,7 @@ export default function JournalScreen() {
           />
         )}
 
-        {[...journalEntries].reverse().map((entry) => {
+        {journalEntries.map((entry) => {
           const book = books.find((b) => b.id === entry.bookId);
           return (
             <div
