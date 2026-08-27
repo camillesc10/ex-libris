@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useStore } from "@/store";
 import { GENRES, TROPES, SPICE_LABELS, RATING_LABELS } from "@/store/data";
 import type { Book, PageNote } from "@/types";
@@ -14,6 +14,11 @@ export default function BookSheet() {
 }
 
 function BookSheetContent({ book }: { book: Book }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   const [seriesNumStr, setSeriesNumStr] = useState(book.seriesNum != null ? String(book.seriesNum) : "");
   const {
     lists, books,
@@ -176,7 +181,7 @@ function BookSheetContent({ book }: { book: Book }) {
 
       <div
         className="animate-slidein max-[820px]:!w-full max-[820px]:!max-w-full"
-        style={{ width: sheetWidth, maxWidth: "96vw", background: "var(--bg)", height: "100vh", overflowY: "auto", boxShadow: "-24px 0 60px -30px rgba(51,41,31,.5)", position: "relative" }}
+        style={{ width: sheetWidth, maxWidth: "96vw", background: "var(--bg)", height: "100vh", overflowY: "auto", overscrollBehavior: "contain", boxShadow: "-24px 0 60px -30px rgba(51,41,31,.5)", position: "relative" }}
       >
         {/* Confetti overlay (#104) */}
         {confetti && (
