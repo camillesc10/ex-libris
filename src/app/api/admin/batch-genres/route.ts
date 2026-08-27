@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ genres, bestHit: { id: bookId, title: best?.document?.title }, genreTags, summary });
   }
 
-  const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "20"), 40);
+  const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "10"), 20);
   const offset = parseInt(req.nextUrl.searchParams.get("offset") ?? "0");
 
   const sql = neon(dbUrl);
@@ -123,11 +123,12 @@ export async function GET(req: NextRequest) {
   const books = await sql`
     SELECT id, title, author
     FROM books
+    WHERE genres = '[]'::jsonb OR genres IS NULL
     ORDER BY title
     LIMIT ${limit} OFFSET ${offset}
   `;
 
-  const [{ total }] = await sql`SELECT COUNT(*)::int AS total FROM books`;
+  const [{ total }] = await sql`SELECT COUNT(*)::int AS total FROM books WHERE genres = '[]'::jsonb OR genres IS NULL`;
 
   const results: { title: string; genres: string[]; source: string }[] = [];
   let updated = 0;
@@ -141,6 +142,8 @@ export async function GET(req: NextRequest) {
     } else {
       results.push({ title: book.title as string, genres: [], source: "—" });
     }
+    // Éviter le rate-limiting Hardcover
+    await new Promise((r) => setTimeout(r, 400));
   }
 
   return NextResponse.json({
