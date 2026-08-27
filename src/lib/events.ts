@@ -1,9 +1,10 @@
 import { randomUUID } from "crypto";
+import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { activityEvents } from "./schema";
+import type * as schema from "./schema";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createEvent(
-  db: any,
+  db: NeonHttpDatabase<typeof schema>,
   userId: string,
   bookId: string,
   type: string,

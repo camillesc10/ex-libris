@@ -192,7 +192,7 @@ export default function ActivityScreen() {
             {!loadingFeed && events.length === 0 && (
               <div style={{ padding: "60px 20px", textAlign: "center" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📖</div>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Pas encore d'activité</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Pas encore d&apos;activité</div>
                 <div style={{ fontSize: 13, color: "var(--muted)", maxWidth: 260, margin: "0 auto" }}>
                   Les lectures de la communauté apparaîtront ici.
                 </div>
