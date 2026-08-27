@@ -198,7 +198,8 @@ export const useStore = create<AppState>((set, get) => ({
           set({ authError: data.error || "Erreur à l'inscription." });
           return;
         }
-        set({ auth: true, authError: "", user: form.name || "Lectrice" });
+        set({ auth: true, authError: "", user: form.name || "Lectrice", hydrated: false, books: [], lists: [], journalEntries: [] });
+        get().hydrate();
       } else {
         const res = await fetch("/api/login", {
           method: "POST",
@@ -211,7 +212,8 @@ export const useStore = create<AppState>((set, get) => ({
           return;
         }
         const data = await res.json();
-        set({ auth: true, authError: "", user: data.name || "Lectrice" });
+        set({ auth: true, authError: "", user: data.name || "Lectrice", hydrated: false, books: [], lists: [], journalEntries: [] });
+        get().hydrate();
       }
     } catch {
       set({ authError: "Erreur réseau — réessaie." });
