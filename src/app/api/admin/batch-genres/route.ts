@@ -124,6 +124,27 @@ export async function GET(req: NextRequest) {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) return NextResponse.json({ error: "DATABASE_URL not set" }, { status: 500 });
 
+  // Mode debug : ?debug=1&title=...&author=...
+  const debugMode = req.nextUrl.searchParams.get("debug") === "1";
+  if (debugMode) {
+    const title = req.nextUrl.searchParams.get("title") ?? "";
+    const author = req.nextUrl.searchParams.get("author") ?? "";
+    const searchRaw = await hcPost(
+      `query($q: String!) { search(query: $q, query_type: "Book", per_page: 1) { results } }`,
+      { q: `${title} ${author}` }
+    );
+    const bookId = searchRaw?.data?.search?.results?.hits?.[0]?.document?.id ?? null;
+    const genreRaw = bookId ? await hcPost(
+      `query($id: Int!) { books_by_pk(id: $id) { genres { genre { name } } } }`,
+      { id: bookId }
+    ) : null;
+    const genreRaw2 = bookId ? await hcPost(
+      `query($id: Int!) { books(where: {id: {_eq: $id}}, limit: 1) { book_tags { tag { tag } } genres { genre { name } } } }`,
+      { id: bookId }
+    ) : null;
+    return NextResponse.json({ searchRaw, bookId, genreRaw, genreRaw2 });
+  }
+
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "20"), 40);
   const offset = parseInt(req.nextUrl.searchParams.get("offset") ?? "0");
 
