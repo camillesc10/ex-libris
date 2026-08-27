@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { useStore } from "@/store";
 
 interface ActivityEvent {
   id: string;
@@ -64,6 +65,7 @@ function eventLabel(ev: ActivityEvent): string {
 const SEARCH_DEBOUNCE = 300;
 
 export default function ActivityScreen() {
+  const { viewProfile } = useStore();
   const [query, setQuery] = useState("");
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
@@ -162,11 +164,17 @@ export default function ActivityScreen() {
               </div>
             )}
             {!loadingSearch && userResults.map((u) => (
-              <div key={u.id} style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "14px 20px",
-                borderBottom: "1px solid var(--line)",
-              }}>
+              <button
+                key={u.id}
+                onClick={() => viewProfile(u.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "14px 20px", width: "100%",
+                  borderBottom: "1px solid var(--line)",
+                  background: "none", border: "none", cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
                 <div style={{
                   width: 40, height: 40, borderRadius: "50%",
                   background: avatarColor(u.name ?? "?"),
@@ -175,8 +183,8 @@ export default function ActivityScreen() {
                 }}>
                   {(u.name ?? "?").charAt(0).toUpperCase()}
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{u.name}</div>
-              </div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--ink)" }}>{u.name}</div>
+              </button>
             ))}
           </div>
         )}
@@ -209,6 +217,7 @@ export default function ActivityScreen() {
 }
 
 function EventCard({ ev }: { ev: ActivityEvent }) {
+  const { viewProfile } = useStore();
   const initial = (ev.userName ?? "?").charAt(0).toUpperCase();
   const color = avatarColor(ev.userName ?? "?");
   const label = eventLabel(ev);
@@ -220,20 +229,28 @@ function EventCard({ ev }: { ev: ActivityEvent }) {
       borderBottom: "1px solid var(--line)",
     }}>
       {/* Avatar */}
-      <div style={{
-        width: 38, height: 38, borderRadius: "50%",
-        background: color, color: "#fff",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontWeight: 700, fontSize: 15, flexShrink: 0,
-        marginTop: 2,
-      }}>
+      <button
+        onClick={() => viewProfile(ev.userId)}
+        style={{
+          width: 38, height: 38, borderRadius: "50%",
+          background: color, color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 700, fontSize: 15, flexShrink: 0,
+          marginTop: 2, border: "none", cursor: "pointer", padding: 0,
+        }}
+      >
         {initial}
-      </div>
+      </button>
 
       {/* Text */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, lineHeight: 1.45 }}>
-          <span style={{ fontWeight: 600 }}>{ev.userName}</span>{" "}
+          <button
+            onClick={() => viewProfile(ev.userId)}
+            style={{ fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--ink)", fontSize: 13 }}
+          >
+            {ev.userName}
+          </button>{" "}
           <span style={{ color: "var(--ink)" }}>{label}</span>
         </div>
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>

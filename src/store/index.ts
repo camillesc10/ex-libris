@@ -41,6 +41,7 @@ interface AppState {
   screen: Screen;
   listFilter: string | null;
   open: string | null;
+  profileUserId: string | null;
 
   // Library
   books: Book[];
@@ -91,6 +92,7 @@ interface AppState {
   dismissTip: () => void;
 
   navigate: (s: Screen) => void;
+  viewProfile: (id: string) => void;
   setListFilter: (name: string | null) => void;
   openBook: (id: string | null) => void;
 
@@ -140,6 +142,7 @@ export const useStore = create<AppState>((set, get) => ({
   screen: "shelf",
   listFilter: null,
   open: null,
+  profileUserId: null,
 
   books: SEED_BOOKS.map((b) => ({ ...b })),
   lists: SEED_LISTS.map((l) => ({ ...l })),
@@ -234,6 +237,9 @@ export const useStore = create<AppState>((set, get) => ({
   // ── Navigation ──
   navigate(s) {
     set({ screen: s, listFilter: null });
+  },
+  viewProfile(id) {
+    set({ profileUserId: id, screen: "profile" });
   },
 
   setListFilter(name) {
