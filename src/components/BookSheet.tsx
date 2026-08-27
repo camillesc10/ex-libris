@@ -228,8 +228,8 @@ function BookSheetContent({ book }: { book: Book }) {
         <div style={{ padding: "30px 34px 60px" }}>
           <div style={{ display: "grid", gridTemplateColumns: sheetCols, gap: 34, alignItems: "start" }} className="max-[820px]:!grid-cols-1 max-[820px]:!gap-[22px]">
 
-            {/* Left column */}
-            <div>
+            {/* Left column — apparaît après le contenu sur mobile */}
+            <div className="max-[820px]:order-2">
               {(() => {
                 const isUnreleased = book.releaseDate && new Date(book.releaseDate) > new Date();
                 const releaseFmt = book.releaseDate ? new Date(book.releaseDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "";
@@ -379,8 +379,8 @@ function BookSheetContent({ book }: { book: Book }) {
               </div>
             </div>
 
-            {/* Right column */}
-            <div style={{ minWidth: 0 }}>
+            {/* Right column — titre/notes en premier sur mobile */}
+            <div style={{ minWidth: 0 }} className="max-[820px]:order-1">
               <div style={{ marginBottom: 22 }}>
                   <div style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 10 }}>{(book.genres ?? []).join(" · ") || null}{book.year ? ` · ${book.year}` : ""} · {book.lang}</div>
                   <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 30, lineHeight: 1.15, letterSpacing: ".02em", textWrap: "pretty" }}>{book.title}</div>

@@ -54,6 +54,13 @@ select {
   color: inherit;
 }
 
+/* iOS Safari auto-zoom sur les inputs < 16px */
+@media (max-width: 820px) {
+  input, textarea, select {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
 a {
   color: var(--accent);
   text-decoration: none;

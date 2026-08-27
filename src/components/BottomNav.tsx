@@ -77,13 +77,18 @@ export default function BottomNav() {
       style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
         alignItems: "stretch",
-        background: "color-mix(in srgb, var(--surface) 94%, transparent)",
-        backdropFilter: "blur(14px)",
+        background: "color-mix(in srgb, var(--surface) 97%, transparent)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
         borderTop: "1px solid var(--line)",
-        padding: "10px 12px calc(26px + env(safe-area-inset-bottom))",
-        gap: 4,
-        WebkitTransform: "translateZ(0)",
-        transform: "translateZ(0)",
+        paddingTop: 8,
+        paddingBottom: "max(20px, env(safe-area-inset-bottom))",
+        paddingLeft: 4,
+        paddingRight: 4,
+        gap: 0,
+        WebkitTransform: "translate3d(0,0,0)",
+        transform: "translate3d(0,0,0)",
+        willChange: "transform",
       }}
     >
       {TABS.map((tab) => {
@@ -95,21 +100,17 @@ export default function BottomNav() {
             aria-label={tab.label}
             onClick={() => navigate(tab.key)}
             style={{
-              flex: 1, minHeight: 50,
+              flex: 1, minHeight: 48,
               display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", gap: 5,
+              alignItems: "center", justifyContent: "center", gap: 4,
               background: "transparent", border: "none", cursor: "pointer",
               color: active ? "var(--accent)" : "var(--muted)",
-              position: "relative",
             }}
           >
             <Icon active={active} />
-            {active && (
-              <span style={{
-                position: "absolute", bottom: -6, left: "50%", transform: "translateX(-50%)",
-                width: 4, height: 4, borderRadius: "50%", background: "var(--accent)",
-              }} />
-            )}
+            <span style={{ fontSize: 10, letterSpacing: ".02em", fontWeight: active ? 600 : 400 }}>
+              {tab.label}
+            </span>
           </button>
         );
       })}
