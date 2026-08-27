@@ -225,7 +225,33 @@ function BookSheetContent({ book }: { book: Book }) {
         </div>
 
 
-        <div style={{ padding: "30px 34px 60px" }}>
+        <div style={{ padding: "30px 34px 60px" }} className="max-[820px]:!px-4 max-[820px]:!pt-4">
+          {/* Couverture mobile — tout en haut */}
+          {(() => {
+            const isUnreleased = book.releaseDate && new Date(book.releaseDate) > new Date();
+            const releaseFmt = book.releaseDate ? new Date(book.releaseDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "";
+            return (
+              <div className="hidden max-[820px]:block" style={{ marginBottom: 20 }}>
+                <div style={{ height: 260, borderRadius: 14, overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 16px 28px -14px rgba(51,41,31,.5)" }}>
+                  {book.coverUrl ? (
+                    <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  ) : (
+                    <div style={{ padding: "22px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+                      <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 22, lineHeight: 1.2, letterSpacing: ".02em" }}>{book.title}</div>
+                      <div style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>{book.author}</div>
+                    </div>
+                  )}
+                  {isUnreleased && (
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(14,10,6,.72)", backdropFilter: "blur(4px)", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 2 }}>
+                      <div style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--accent)", fontWeight: 700 }}>À paraître</div>
+                      <div style={{ fontSize: 12, color: "#E8E3F0" }}>{releaseFmt}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           <div style={{ display: "grid", gridTemplateColumns: sheetCols, gap: 34, alignItems: "start" }} className="max-[820px]:!grid-cols-1 max-[820px]:!gap-[22px]">
 
             {/* Left column — apparaît après le contenu sur mobile */}
@@ -234,7 +260,7 @@ function BookSheetContent({ book }: { book: Book }) {
                 const isUnreleased = book.releaseDate && new Date(book.releaseDate) > new Date();
                 const releaseFmt = book.releaseDate ? new Date(book.releaseDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "";
                 return (
-                  <div style={{ height: 300, borderRadius: "5px 14px 14px 5px", overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
+                  <div className="max-[820px]:hidden" style={{ height: 300, borderRadius: "5px 14px 14px 5px", overflow: "hidden", position: "relative", background: book.bg, color: book.ink, boxShadow: "0 20px 34px -18px rgba(51,41,31,.5)", marginBottom: 20 }}>
                     {book.coverUrl ? (
                       <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                     ) : (

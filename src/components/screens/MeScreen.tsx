@@ -1,19 +1,16 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useStore } from "@/store";
-
-const STAT_LINKS = [
-  { label: "Mes collections", screen: "lists" as const },
-  { label: "Mes sagas", screen: "series" as const },
-];
 
 export default function MeScreen() {
   const {
     user, yearGoal, books, journalEntries,
-    setYearGoal, navigate, logout, importGoodreads,
+    setYearGoal, navigate, logout, newList, setNewList, addList,
   } = useStore();
 
+  const [showListInput, setShowListInput] = useState(false);
   const goodreadsRef = useRef<HTMLInputElement>(null);
+  void goodreadsRef; // conservé pour une future réintégration
 
   const booksRead = books.filter((b) => b.lists.includes("Déjà lu")).length;
   const totalPages = journalEntries.reduce((s, e) => s + e.pagesRead, 0);
@@ -27,18 +24,6 @@ export default function MeScreen() {
 
   const goalProgress = yearGoal > 0 ? Math.min(1, booksRead / yearGoal) : 0;
   const initial = (user || "L").charAt(0).toUpperCase();
-
-  function handleGoodreadsImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const csv = ev.target?.result as string;
-      if (csv) importGoodreads(csv);
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }
 
   return (
     <div style={{ padding: "52px 20px calc(100px + env(safe-area-inset-bottom))", maxWidth: 540, margin: "0 auto" }}>
@@ -123,36 +108,41 @@ export default function MeScreen() {
         ))}
       </div>
 
-      {/* Nav links */}
+      {/* Ajouter une liste */}
       <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", overflow: "hidden", marginBottom: 20 }}>
-        {STAT_LINKS.map((link, i) => (
+        {!showListInput ? (
           <button
-            key={link.screen}
-            onClick={() => navigate(link.screen)}
+            onClick={() => setShowListInput(true)}
             style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "15px 18px", background: "none", border: "none", cursor: "pointer",
-              borderBottom: i < STAT_LINKS.length - 1 ? "1px solid var(--line)" : "none",
               fontSize: 14, color: "var(--ink)", textAlign: "left",
             }}
           >
-            {link.label}
-            <span style={{ color: "var(--muted)", fontSize: 16 }}>›</span>
+            Ajouter une liste
+            <span style={{ color: "var(--muted)", fontSize: 16 }}>+</span>
           </button>
-        ))}
-        <button
-          onClick={() => goodreadsRef.current?.click()}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "15px 18px", background: "none", border: "none", cursor: "pointer",
-            borderTop: "1px solid var(--line)",
-            fontSize: 14, color: "var(--ink)", textAlign: "left",
-          }}
-        >
-          Importer Goodreads
-          <span style={{ color: "var(--muted)", fontSize: 16 }}>›</span>
-        </button>
-        <input ref={goodreadsRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleGoodreadsImport} />
+        ) : (
+          <div style={{ display: "flex", gap: 8, padding: "12px 14px" }}>
+            <input
+              autoFocus
+              value={newList}
+              onChange={(e) => setNewList(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newList.trim()) { addList(); setShowListInput(false); }
+                if (e.key === "Escape") { setShowListInput(false); setNewList(""); }
+              }}
+              placeholder="Nom de la liste…"
+              style={{ flex: 1, padding: "9px 12px", border: "1px solid var(--line)", borderRadius: 10, background: "var(--bg)", fontSize: 14, outline: "none" }}
+            />
+            <button
+              onClick={() => { if (newList.trim()) addList(); setShowListInput(false); }}
+              style={{ padding: "9px 14px", borderRadius: 10, background: "var(--accent)", color: "#161C2F", fontWeight: 600, fontSize: 13, border: "none", cursor: "pointer" }}
+            >
+              OK
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Logout */}

@@ -217,6 +217,40 @@ export default function ShelfScreen() {
               );
             })}
           </div>
+
+          {/* Listes & sagas — scroll horizontal */}
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", marginTop: 10, paddingBottom: 2, scrollbarWidth: "none" }}>
+            <button
+              onClick={() => navigate("series")}
+              style={{
+                flexShrink: 0, padding: "6px 13px", borderRadius: 999,
+                border: "1px solid var(--line)", background: "var(--surface)",
+                fontSize: 12.5, color: "var(--ink)", whiteSpace: "nowrap",
+              }}
+            >
+              Mes sagas
+            </button>
+            {lists.map((l) => {
+              const active = listFilter === l.name;
+              return (
+                <button
+                  key={l.name}
+                  onClick={() => setListFilter(active ? null : l.name)}
+                  style={{
+                    flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
+                    padding: "6px 13px", borderRadius: 999,
+                    border: `1px solid ${active ? l.dot : "var(--line)"}`,
+                    background: active ? "var(--soft)" : "var(--surface)",
+                    fontSize: 12.5, color: active ? "var(--accent)" : "var(--ink)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: l.dot, flexShrink: 0 }} />
+                  {l.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* 2-column book grid */}
