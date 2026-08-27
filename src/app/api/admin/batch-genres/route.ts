@@ -83,15 +83,16 @@ async function fetchGenreFromHardcover(title: string, author: string): Promise<G
 
   // Priorité : title+author > author seul > premier hit
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const best: any =
-    hits.find((h: any) =>
-      norm(h.document?.title ?? "").includes(normTitle) &&
-      (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normAuthor))
-    ) ??
-    hits.find((h: any) =>
-      (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normAuthor))
-    ) ??
-    hits[0];
+  const matchTitleAuthor = (h: any) =>
+    norm(h.document?.title ?? "").includes(normTitle) &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normAuthor));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const matchAuthor = (h: any) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normAuthor));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const best: any = hits.find(matchTitleAuthor) ?? hits.find(matchAuthor) ?? hits[0];
 
   const bookId = parseInt(best?.document?.id ?? "0");
 
