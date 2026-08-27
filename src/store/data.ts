@@ -1,4 +1,4 @@
-import type { Book, BookList, Conversation, SealedNote, Reader } from "@/types";
+import type { Book, BookList } from "@/types";
 
 export const COVER_PALETTE: [string, string][] = [
   ["#151C31", "#F0DFAE"],
@@ -49,11 +49,6 @@ export const SEED_LISTS: BookList[] = [
   { name: "Liste de souhaits", dot: "#C4735C", desc: "Ceux que je veux lire mais que je n'ai pas encore." },
 ];
 
-export const SEED_CONVOS: Conversation[] = [];
-
-export const SEED_NOTES: SealedNote[] = [];
-
-export const SEED_READERS: Reader[] = [];
 
 export const FRIENDS: { name: string; color: string }[] = [];
 

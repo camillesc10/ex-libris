@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { books as booksTable, userBooks as userBooksTable } from "@/lib/schema";
 import { auth } from "@/auth";
+import { createEvent } from "@/lib/events";
 
 export async function GET() {
   const session = await auth();
@@ -102,6 +103,7 @@ export async function POST(req: Request) {
       reminderDate: rest.reminderDate,
       releaseDate: rest.releaseDate,
     });
+    await createEvent(db, userId, id, "book_added", { title, author });
     return NextResponse.json(book, { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

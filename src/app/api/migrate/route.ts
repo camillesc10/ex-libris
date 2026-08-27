@@ -7,16 +7,7 @@ export async function GET() {
 
   const sql = neon(url);
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS conversations (
-      id          TEXT PRIMARY KEY,
-      name        TEXT NOT NULL,
-      initial     TEXT NOT NULL,
-      avatar_bg   TEXT NOT NULL,
-      time        TEXT DEFAULT '',
-      messages    JSONB DEFAULT '[]'
-    )
-  `;
+  await sql`DROP TABLE IF EXISTS conversations`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS sealed_notes (
@@ -38,13 +29,7 @@ export async function GET() {
     )
   `;
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS club_proposals (
-      book_id     TEXT PRIMARY KEY,
-      votes       INTEGER DEFAULT 1,
-      voted_by_me BOOLEAN DEFAULT FALSE
-    )
-  `;
+  await sql`DROP TABLE IF EXISTS club_proposals`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS user_prefs (
@@ -84,46 +69,15 @@ export async function GET() {
     )
   `;
 
-  // Copy existing book data to user_books for each existing user (migration from single-table model)
-  await sql`
-    INSERT INTO user_books (
-      id, user_id, book_id, spice, rating, page, tropes, lists, resume, comment,
-      bg, ink, platforms, started_at, finished_at, page_notes, pros, cons,
-      quote, dnf_reason, related_books, reminder_date
-    )
-    SELECT
-      gen_random_uuid()::text,
-      u.id,
-      b.id,
-      COALESCE(b.spice, 0),
-      COALESCE(b.rating, 0),
-      COALESCE(b.page, 0),
-      COALESCE(b.tropes, '[]'::jsonb),
-      COALESCE(b.lists, '[]'::jsonb),
-      COALESCE(b.resume, ''),
-      COALESCE(b.comment, ''),
-      COALESCE(b.bg, '#1E1B4B'),
-      COALESCE(b.ink, '#E8E3F0'),
-      COALESCE(b.platforms, '[]'::jsonb),
-      b.started_at,
-      b.finished_at,
-      COALESCE(b.page_notes, '[]'::jsonb),
-      COALESCE(b.pros, ''),
-      COALESCE(b.cons, ''),
-      COALESCE(b.quote, ''),
-      COALESCE(b.dnf_reason, ''),
-      COALESCE(b.related_books, '[]'::jsonb),
-      b.reminder_date
-    FROM books b
-    CROSS JOIN users u
-    ON CONFLICT (user_id, book_id) DO NOTHING
-  `;
-
-  // Déplacer rating, started_at, finished_at, page_notes de books vers user_books
-  await sql`ALTER TABLE books DROP COLUMN IF EXISTS rating`;
-  await sql`ALTER TABLE books DROP COLUMN IF EXISTS started_at`;
-  await sql`ALTER TABLE books DROP COLUMN IF EXISTS finished_at`;
-  await sql`ALTER TABLE books DROP COLUMN IF EXISTS page_notes`;
+  // Nettoyage colonnes legacy sur books (données personnelles déplacées vers user_books)
+  const bookColsToDrop = [
+    "rating", "started_at", "finished_at", "page_notes",
+    "spice", "page", "lists", "resume", "comment", "platforms",
+    "pros", "cons", "quote", "dnf_reason", "related_books", "reminder_date",
+  ];
+  for (const col of bookColsToDrop) {
+    await sql`ALTER TABLE books DROP COLUMN IF EXISTS ${sql.unsafe(col)}`;
+  }
 
   await sql`
     CREATE TABLE IF NOT EXISTS tropes_catalog (
@@ -195,6 +149,26 @@ export async function GET() {
       ON CONFLICT (id) DO NOTHING
     `;
   }
+
+  // Nettoyage tropes_catalog : supprimer la colonne category (inutilisée)
+  await sql`ALTER TABLE tropes_catalog DROP COLUMN IF EXISTS category`;
+
+  // Unicité du pseudo sur users
+  await sql`ALTER TABLE users ADD CONSTRAINT users_name_unique UNIQUE (name)`.catch(() => {});
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS activity_events (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL,
+      book_id     TEXT NOT NULL,
+      type        TEXT NOT NULL,
+      payload     JSONB DEFAULT '{}',
+      created_at  TEXT NOT NULL
+    )
+  `;
+
+  // Colonne release_date sur user_books (ajoutée après la migration initiale)
+  await sql`ALTER TABLE user_books ADD COLUMN IF NOT EXISTS release_date TEXT`.catch(() => {});
 
   return NextResponse.json({ ok: true, message: "Tables créées et données migrées." });
 }

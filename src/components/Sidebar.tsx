@@ -27,10 +27,9 @@ export default function Sidebar() {
     { key: "search" as const, label: "Ajouter un livre", count: "＋" },
     { key: "lists" as const, label: "Mes listes", count: lists.length },
     { key: "series" as const, label: "Mes sagas", count: new Set(books.filter((b) => b.series).map((b) => b.series)).size || "" },
-    { key: "authors" as const, label: "Auteurs", count: new Set(books.map((b) => b.author)).size },
     { key: "journal" as const, label: "Journal", count: "" },
     { key: "timeline" as const, label: "Chronologie", count: "" },
-    { key: "sync" as const, label: "Lecture partagée", count: "" },
+    { key: "activity" as const, label: "Activité", count: "" },
   ];
 
   return (
