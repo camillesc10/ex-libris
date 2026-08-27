@@ -149,39 +149,22 @@ export async function GET(req: NextRequest) {
   if (debugMode) {
     const title = req.nextUrl.searchParams.get("title") ?? "";
     const author = req.nextUrl.searchParams.get("author") ?? "";
+    const mapped = await fetchGenreFromHardcover(title, author);
+    // Aussi montrer les hits bruts pour diagnostic
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const searchRaw: any = await hcPost(
-      `query($q: String!) { search(query: $q, query_type: "Book", per_page: 3) { results } }`,
+      `query($q: String!) { search(query: $q, query_type: "Book", per_page: 5) { results } }`,
       { q: `${title} ${author}` }
     );
     const hits = searchRaw?.data?.search?.results?.hits ?? [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const summary = hits.map((h: any) => ({
+      id: h.document?.id,
       title: h.document?.title,
       authors: h.document?.author_names,
       genres: h.document?.genres,
-      moods: h.document?.moods,
-      tags: h.document?.tags,
     }));
-    // Trouver l'id du bon hit
-    const normAuthor = author.toLowerCase().replace(/[^a-z]/g, "").slice(0, 8);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const best = hits.find((h: any) =>
-      (h.document?.author_names as string[] ?? []).some(
-        (a: string) => a.toLowerCase().replace(/[^a-z]/g, "").includes(normAuthor)
-      )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) as any ?? (hits[0] as any);
-    const bookId = parseInt(best?.document?.id ?? "0");
-    // Tester plusieurs structures de champs pour les genres
-    const attempts = await Promise.all([
-      hcPost(`query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { book_genre { genre { name } } } }`, { id: bookId }),
-      hcPost(`query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { taggings { tag { name } } } }`, { id: bookId }),
-      hcPost(`query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { cached_tags } }`, { id: bookId }),
-      hcPost(`query($id: Int!) { book_genre(where:{book_id:{_eq:$id}}) { genre { name } } }`, { id: bookId }),
-      hcPost(`query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { genre } }`, { id: bookId }),
-    ]);
-    return NextResponse.json({ summary, bookId, attempts });
+    return NextResponse.json({ mapped, summary });
   }
 
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "20"), 40);
