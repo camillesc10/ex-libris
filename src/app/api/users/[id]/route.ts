@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users, books, userBooks } from "@/lib/schema";
 
@@ -33,7 +33,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       })
       .from(userBooks)
       .innerJoin(books, eq(books.id, userBooks.bookId))
-      .where(and(eq(userBooks.userId, id)));
+      .where(eq(userBooks.userId, id));
 
     const booksRead = rows.filter((b) => (b.lists as string[]).includes("Déjà lu")).length;
     const ratedBooks = rows.filter((b) => (b.rating ?? 0) > 0);

@@ -18,6 +18,7 @@ import BookSheet from "./BookSheet";
 import Toast from "./Toast";
 import InstallBanner from "./InstallBanner";
 import StarField from "./StarField";
+import RouterSync from "./RouterSync";
 
 export default function AppShell() {
   const { theme, screen, open, toast, hydrate } = useStore();
@@ -25,6 +26,7 @@ export default function AppShell() {
 
   return (
     <div data-theme={theme} style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+      <RouterSync />
       <StarField />
       <div
         style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", position: "relative", zIndex: 1 }}
