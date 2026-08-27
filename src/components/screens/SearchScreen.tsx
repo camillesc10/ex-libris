@@ -10,7 +10,7 @@ function normalize(s: string) {
 }
 
 export default function SearchScreen() {
-  const { results, searching, source, added, books, addFromApi, runSearch, setQuery, query } = useStore();
+  const { results, searching, source, added, books, addFromApi, openBook, runSearch, setQuery, query } = useStore();
   const [scanOpen, setScanOpen] = useState(false);
   const [isbnDraft, setIsbnDraft] = useState("");
 
@@ -169,17 +169,20 @@ export default function SearchScreen() {
                   {r.snippet}
                 </div>
                 <button
-                  onClick={() => !isAdded && !inLibrary && addFromApi(r)}
+                  onClick={() => {
+                    if (r.inLibrary) { openBook(r.key); return; }
+                    if (!isAdded && !inLibrary) addFromApi(r);
+                  }}
                   style={{
                     marginTop: 12, alignSelf: "flex-start", padding: "8px 13px",
                     borderRadius: 10, fontSize: 12.5, fontWeight: 600,
-                    background: (isAdded || inLibrary) ? "var(--surface2)" : "var(--soft)",
-                    color: (isAdded || inLibrary) ? "var(--muted)" : "var(--accent)",
+                    background: r.inLibrary ? "var(--soft)" : (isAdded || inLibrary) ? "var(--surface2)" : "var(--soft)",
+                    color: r.inLibrary ? "var(--accent)" : (isAdded || inLibrary) ? "var(--muted)" : "var(--accent)",
                     transition: "all .12s",
-                    cursor: (isAdded || inLibrary) ? "default" : "pointer",
+                    cursor: (isAdded || inLibrary) && !r.inLibrary ? "default" : "pointer",
                   }}
                 >
-                  {isAdded ? "Ajouté ✓" : inLibrary ? "Déjà dans ta bibliothèque" : "Ajouter à ma bibliothèque"}
+                  {r.inLibrary ? "Ouvrir →" : isAdded ? "Ajouté ✓" : inLibrary ? "Déjà dans ta bibliothèque" : "Ajouter à ma bibliothèque"}
                 </button>
               </div>
             </div>

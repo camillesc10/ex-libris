@@ -421,6 +421,30 @@ export const useStore = create<AppState>((set, get) => ({
     const q = get().query.trim();
     if (!q) return;
     set({ screen: "search", searching: true, results: [], source: "" });
+
+    // 1. Recherche dans la bibliothèque personnelle d'abord
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const nq = norm(q);
+    const libraryHits = get().books.filter(
+      (b) => norm(b.title).includes(nq) || norm(b.author).includes(nq)
+    );
+    if (libraryHits.length > 0) {
+      const rs: SearchResult[] = libraryHits.map((b) => ({
+        key: b.id,
+        title: b.title,
+        author: b.author,
+        year: b.year,
+        snippet: b.resume ?? "",
+        cover: b.coverUrl ?? "",
+        pages: b.pages,
+        lang: b.lang,
+        inLibrary: true,
+      }));
+      set({ results: rs, searching: false, source: "bibliothèque" });
+      return;
+    }
+
+    // 2. Fallback : sources externes
     try {
       const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
       const j = await res.json();

@@ -73,4 +73,5 @@ export interface SearchResult {
   lang: string;
   isbn?: string;
   releaseDate?: string;
+  inLibrary?: boolean;
 }
