@@ -58,6 +58,8 @@ export default function SeriesScreen() {
                 {tomes.map((book) => {
                   const isRead = book.lists.includes("Déjà lu");
                   const isReading = book.lists.includes("En cours");
+                  const isAbandoned = book.lists.includes("Abandonné");
+                  const isPAL = book.lists.includes("PAL") && !isRead && !isReading && !isAbandoned;
                   const isUnreleased = !!(book.releaseDate && new Date(book.releaseDate) > today);
 
                   return (
@@ -95,10 +97,24 @@ export default function SeriesScreen() {
                         )}
 
                         {isRead && (
-                          <div style={{ position: "absolute", top: 5, right: 5, width: 18, height: 18, borderRadius: "50%", background: "var(--accent)", color: "#161C2F", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 700 }}>✓</div>
+                          <div style={{ position: "absolute", top: 5, right: 5, width: 20, height: 20, borderRadius: "50%", background: "var(--accent)", color: "#161C2F", display: "grid", placeItems: "center" }}>
+                            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3" /></svg>
+                          </div>
                         )}
                         {isReading && !isRead && (
-                          <div style={{ position: "absolute", top: 5, right: 5, width: 18, height: 18, borderRadius: "50%", background: "#E0B84A", color: "#161C2F", display: "grid", placeItems: "center", fontSize: 9, fontWeight: 700 }}>…</div>
+                          <div style={{ position: "absolute", top: 5, right: 5, width: 20, height: 20, borderRadius: "50%", background: "#E0B84A", color: "#161C2F", display: "grid", placeItems: "center" }}>
+                            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 9 Q3 2 6 6 Q9 10 11 3" /></svg>
+                          </div>
+                        )}
+                        {isAbandoned && (
+                          <div style={{ position: "absolute", top: 5, right: 5, width: 20, height: 20, borderRadius: "50%", background: "#EF4444", color: "#fff", display: "grid", placeItems: "center" }}>
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="3" y1="3" x2="9" y2="9" /><line x1="9" y1="3" x2="3" y2="9" /></svg>
+                          </div>
+                        )}
+                        {isPAL && (
+                          <div style={{ position: "absolute", top: 5, right: 5, width: 20, height: 20, borderRadius: "50%", background: "#6366F1", color: "#fff", display: "grid", placeItems: "center" }}>
+                            <svg width="10" height="11" viewBox="0 0 10 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 1h6a1 1 0 0 1 1 1v9L5 9 1 11V2a1 1 0 0 1 1-1z" /></svg>
+                          </div>
                         )}
                         {isUnreleased && (
                           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(14,10,6,.75)", padding: "5px 5px 4px", textAlign: "center" }}>
