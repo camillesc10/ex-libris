@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { books as booksTable, userBooks as userBooksTable } from "@/lib/schema";
 import { auth } from "@/auth";
@@ -69,6 +69,14 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const db = getDb();
     await db.delete(userBooksTable).where(and(eq(userBooksTable.bookId, id), eq(userBooksTable.userId, userId)));
+    // Supprimer aussi le livre si aucun autre utilisateur ne l'a dans sa bibliothèque
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(userBooksTable)
+      .where(eq(userBooksTable.bookId, id));
+    if (count === 0) {
+      await db.delete(booksTable).where(eq(booksTable.id, id));
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
