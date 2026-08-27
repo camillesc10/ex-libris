@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/store";
 import type { Screen } from "@/types";
@@ -35,6 +35,10 @@ export default function RouterSync() {
   const navigate = useStore((s) => s.navigate);
   const viewProfile = useStore((s) => s.viewProfile);
 
+  // Ref always pointing to the current pathname — avoids stale closure in store→URL effect
+  const pathnameRef = useRef(pathname);
+  useEffect(() => { pathnameRef.current = pathname; }, [pathname]);
+
   // URL → store : gère le bouton Retour/Suivant du navigateur + accès direct par URL
   useEffect(() => {
     if (pathname.startsWith("/profil/")) {
@@ -52,8 +56,9 @@ export default function RouterSync() {
     const targetPath = screen === "profile"
       ? `/profil/${profileUserId ?? ""}`
       : (SCREEN_TO_PATH[screen] ?? "/etagere");
-    if (targetPath !== pathname) {
-      router.push(targetPath, { scroll: false });
+    if (targetPath !== pathnameRef.current) {
+      pathnameRef.current = targetPath;
+      router.replace(targetPath, { scroll: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, profileUserId]);
