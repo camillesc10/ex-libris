@@ -22,6 +22,7 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 async function fetchGenresFromHardcover(title: string, author: string): Promise<string[]> {
+  // 1 seul appel : le document de recherche contient déjà les genres
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const searchData: any = await hcPost(
     `query($q: String!) { search(query: $q, query_type: "Book", per_page: 5) { results } }`,
@@ -45,19 +46,7 @@ async function fetchGenresFromHardcover(title: string, author: string): Promise<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const best: any = hits.find(matchTitleAuthor) ?? hits.find(matchAuthor) ?? hits[0];
 
-  const bookId = parseInt(best?.document?.id ?? "0");
-
-  // cached_tags donne la liste complète des genres votés par la communauté
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tagData: any = await hcPost(
-    `query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { cached_tags } }`,
-    { id: bookId }
-  );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const genreTags: string[] = (tagData?.data?.books?.[0]?.cached_tags?.Genre ?? []).map((g: any) => g.tag as string);
-
-  // Fallback sur les genres du document de recherche si cached_tags vide
-  return genreTags.length ? genreTags : (best?.document?.genres ?? []);
+  return best?.document?.genres ?? [];
 }
 
 export async function GET(req: NextRequest) {
@@ -91,31 +80,18 @@ export async function GET(req: NextRequest) {
       (h.document?.author_names as string[] ?? []).some((a: string) => norm(a).includes(normA));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const best: any = hits.find(matchTitleAuthor) ?? hits.find(matchAuthor) ?? hits[0];
-    const bookId = best?.document?.id ? parseInt(best.document.id) : null;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let cachedTags: any = null;
-    if (bookId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tagData: any = await hcPost(
-        `query($id: Int!) { books(where:{id:{_eq:$id}},limit:1) { cached_tags } }`,
-        { id: bookId }
-      );
-      cachedTags = tagData?.data?.books?.[0]?.cached_tags ?? null;
-    }
-    const genreTags: string[] = (cachedTags?.Genre ?? []).map((g: { tag: string }) => g.tag);
-    const genres = genreTags.length ? genreTags : (best?.document?.genres ?? []);
+    const genres: string[] = best?.document?.genres ?? [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const summary = hits.map((h: any) => ({
       id: h.document?.id,
       title: h.document?.title,
       authors: h.document?.author_names,
-      docGenres: h.document?.genres,
+      genres: h.document?.genres,
     }));
-    return NextResponse.json({ genres, bestHit: { id: bookId, title: best?.document?.title }, genreTags, summary });
+    return NextResponse.json({ genres, bestHit: { id: best?.document?.id, title: best?.document?.title }, summary });
   }
 
-  const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "10"), 20);
+  const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "8"), 12);
   const offset = parseInt(req.nextUrl.searchParams.get("offset") ?? "0");
 
   const sql = neon(dbUrl);
@@ -142,8 +118,8 @@ export async function GET(req: NextRequest) {
     } else {
       results.push({ title: book.title as string, genres: [], source: "—" });
     }
-    // Éviter le rate-limiting Hardcover
-    await new Promise((r) => setTimeout(r, 400));
+    // 1 req/s max (60/min) — 1 appel par livre donc 1s de pause suffit
+    await new Promise((r) => setTimeout(r, 1000));
   }
 
   return NextResponse.json({
