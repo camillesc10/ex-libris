@@ -42,6 +42,7 @@ interface AppState {
   listFilter: string | null;
   open: string | null;
   profileUserId: string | null;
+  currentUserId: string | null;
 
   // Library
   books: Book[];
@@ -143,6 +144,7 @@ export const useStore = create<AppState>((set, get) => ({
   listFilter: null,
   open: null,
   profileUserId: null,
+  currentUserId: null,
 
   books: SEED_BOOKS.map((b) => ({ ...b })),
   lists: SEED_LISTS.map((l) => ({ ...l })),
@@ -239,6 +241,10 @@ export const useStore = create<AppState>((set, get) => ({
     set({ screen: s, listFilter: null });
   },
   viewProfile(id) {
+    if (id && id === get().currentUserId) {
+      set({ screen: "me" });
+      return;
+    }
     set({ profileUserId: id, screen: "profile" });
   },
 
@@ -254,18 +260,20 @@ export const useStore = create<AppState>((set, get) => ({
   async hydrate() {
     if (get().hydrated) return;
     try {
-      const [br, lr, jr, pr] = await Promise.all([
+      const [br, lr, jr, pr, mr] = await Promise.all([
         fetch("/api/books"), fetch("/api/lists"),
         fetch("/api/journal"), fetch("/api/prefs"),
+        fetch("/api/me"),
       ]);
-      const [booksData, listsData, journalData, prefsData] = await Promise.all([
-        br.json(), lr.json(), jr.json(), pr.json(),
+      const [booksData, listsData, journalData, prefsData, meData] = await Promise.all([
+        br.json(), lr.json(), jr.json(), pr.json(), mr.ok ? mr.json() : Promise.resolve(null),
       ]);
       set({
         books: booksData, lists: listsData,
         journalEntries: journalData,
         shelfColors: prefsData.shelfColors ?? {},
         yearGoal: prefsData.yearGoal ?? 0,
+        currentUserId: meData?.id ?? null,
         hydrated: true,
       });
     } catch {

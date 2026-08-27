@@ -217,8 +217,10 @@ export default function ActivityScreen() {
 }
 
 function EventCard({ ev }: { ev: ActivityEvent }) {
-  const { viewProfile } = useStore();
-  const initial = (ev.userName ?? "?").charAt(0).toUpperCase();
+  const { viewProfile, currentUserId } = useStore();
+  const isMe = ev.userId === currentUserId;
+  const displayName = isMe ? "Vous" : (ev.userName ?? "?");
+  const initial = displayName.charAt(0).toUpperCase();
   const color = avatarColor(ev.userName ?? "?");
   const label = eventLabel(ev);
 
@@ -247,9 +249,9 @@ function EventCard({ ev }: { ev: ActivityEvent }) {
         <div style={{ fontSize: 13, lineHeight: 1.45 }}>
           <button
             onClick={() => viewProfile(ev.userId)}
-            style={{ fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--ink)", fontSize: 13 }}
+            style={{ fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, color: isMe ? "var(--accent)" : "var(--ink)", fontSize: 13 }}
           >
-            {ev.userName}
+            {displayName}
           </button>{" "}
           <span style={{ color: "var(--ink)" }}>{label}</span>
         </div>
