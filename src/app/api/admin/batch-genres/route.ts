@@ -67,26 +67,27 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
 }
 
 async function fetchGenreFromHardcover(title: string, author: string): Promise<Genre | ""> {
-  // Étape 1 : recherche pour obtenir l'id Hardcover
+  // Les genres sont déjà dans le document de recherche (string[])
+  // On demande 5 hits pour pouvoir filtrer par auteur (le premier peut être un guide/compagnon)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const searchData: any = await hcPost(
-    `query($q: String!) { search(query: $q, query_type: "Book", per_page: 1) { results } }`,
+    `query($q: String!) { search(query: $q, query_type: "Book", per_page: 5) { results } }`,
     { q: `${title} ${author}` }
   );
-  const bookId: number | null = searchData?.data?.search?.results?.hits?.[0]?.document?.id ?? null;
-  if (!bookId) return "";
+  const hits: unknown[] = searchData?.data?.search?.results?.hits ?? [];
+  if (!hits.length) return "";
 
-  // Étape 2 : récupération des genres via l'id
+  // Préférer le hit dont l'auteur correspond
+  const normAuthor = author.toLowerCase().replace(/[^a-z]/g, "").slice(0, 8);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const genreData: any = await hcPost(
-    `query($id: Int!) { books_by_pk(id: $id) { genres { genre { name } } } }`,
-    { id: bookId }
-  );
-  const genres: string[] = (genreData?.data?.books_by_pk?.genres ?? [])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((g: any) => g?.genre?.name as string)
-    .filter(Boolean);
+  const best = hits.find((h: any) =>
+    (h.document?.author_names as string[] ?? []).some(
+      (a: string) => a.toLowerCase().replace(/[^a-z]/g, "").includes(normAuthor)
+    )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) as any ?? (hits[0] as any);
 
+  const genres: string[] = best?.document?.genres ?? [];
   return mapHardcoverGenres(genres, title, author);
 }
 
@@ -129,20 +130,21 @@ export async function GET(req: NextRequest) {
   if (debugMode) {
     const title = req.nextUrl.searchParams.get("title") ?? "";
     const author = req.nextUrl.searchParams.get("author") ?? "";
-    const searchRaw = await hcPost(
-      `query($q: String!) { search(query: $q, query_type: "Book", per_page: 1) { results } }`,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const searchRaw: any = await hcPost(
+      `query($q: String!) { search(query: $q, query_type: "Book", per_page: 5) { results } }`,
       { q: `${title} ${author}` }
     );
-    const bookId = searchRaw?.data?.search?.results?.hits?.[0]?.document?.id ?? null;
-    const genreRaw = bookId ? await hcPost(
-      `query($id: Int!) { books_by_pk(id: $id) { genres { genre { name } } } }`,
-      { id: bookId }
-    ) : null;
-    const genreRaw2 = bookId ? await hcPost(
-      `query($id: Int!) { books(where: {id: {_eq: $id}}, limit: 1) { book_tags { tag { tag } } genres { genre { name } } } }`,
-      { id: bookId }
-    ) : null;
-    return NextResponse.json({ searchRaw, bookId, genreRaw, genreRaw2 });
+    const hits = searchRaw?.data?.search?.results?.hits ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const summary = hits.map((h: any) => ({
+      title: h.document?.title,
+      authors: h.document?.author_names,
+      genres: h.document?.genres,
+      moods: h.document?.moods,
+    }));
+    const mapped = await fetchGenreFromHardcover(title, author);
+    return NextResponse.json({ summary, mapped });
   }
 
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "20"), 40);
