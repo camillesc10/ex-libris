@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useStore } from "@/store";
+import type { JournalEntry } from "@/types";
 
 export default function JournalScreen() {
   const { books, journalEntries, addJournalEntry, openBook } = useStore();
@@ -10,8 +11,28 @@ export default function JournalScreen() {
   const [bookId, setBookId] = useState<string>(booksEnCours[0]?.id ?? "");
   const [pages, setPages] = useState("");
   const [note, setNote] = useState("");
+  const [viewMode, setViewMode] = useState<"timeline" | "parLivre">("timeline");
 
   const totalPages = journalEntries.reduce((sum, e) => sum + e.pagesRead, 0);
+
+  // #17 — regroupement par livre
+  const byBook: { book: ReturnType<typeof books.find>; entries: JournalEntry[]; total: number }[] = [];
+  if (viewMode === "parLivre") {
+    const map = new Map<string, JournalEntry[]>();
+    for (const e of journalEntries) {
+      const arr = map.get(e.bookId) ?? [];
+      arr.push(e);
+      map.set(e.bookId, arr);
+    }
+    for (const [bid, entries] of map) {
+      byBook.push({
+        book: books.find((b) => b.id === bid),
+        entries,
+        total: entries.reduce((s, e) => s + e.pagesRead, 0),
+      });
+    }
+    byBook.sort((a, b) => b.total - a.total);
+  }
 
   function handleSubmit() {
     const pagesRead = parseInt(pages, 10);
@@ -182,13 +203,32 @@ export default function JournalScreen() {
         </div>
       </div>
 
-      {/* ── Total pages stat ── */}
+      {/* ── Total pages + toggle de vue ── */}
       {journalEntries.length > 0 && (
-        <div style={{ marginBottom: 28, fontSize: 13, color: "var(--muted)" }}>
-          Total pages lues&nbsp;:{" "}
-          <strong style={{ color: "var(--ink)" }}>
-            {totalPages.toLocaleString()}
-          </strong>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 13, color: "var(--muted)" }}>
+            Total pages lues&nbsp;:{" "}
+            <strong style={{ color: "var(--ink)" }}>
+              {totalPages.toLocaleString()}
+            </strong>
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+            {(["timeline", "parLivre"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                style={{
+                  padding: "5px 13px", borderRadius: 999, fontSize: 12,
+                  border: `1px solid ${viewMode === mode ? "var(--accent)" : "var(--line)"}`,
+                  background: viewMode === mode ? "var(--soft)" : "transparent",
+                  color: viewMode === mode ? "var(--accent)" : "var(--muted)",
+                  cursor: "pointer",
+                }}
+              >
+                {mode === "timeline" ? "Chronologique" : "Par livre"}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -207,8 +247,60 @@ export default function JournalScreen() {
         </div>
       )}
 
-      {/* ── Timeline ── */}
-      <div style={{ position: "relative", paddingLeft: 36 }}>
+      {/* ── Vue par livre (#17) ── */}
+      {viewMode === "parLivre" && byBook.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {byBook.map(({ book, entries, total }) => (
+            <div
+              key={book?.id ?? entries[0].bookId}
+              style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", overflow: "hidden" }}
+            >
+              {/* En-tête du livre */}
+              <button
+                onClick={() => book && openBook(book.id)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 14,
+                  padding: "14px 18px", background: "none", border: "none",
+                  cursor: book ? "pointer" : "default", textAlign: "left",
+                }}
+              >
+                {book && (
+                  <div style={{ width: 36, height: 54, borderRadius: "3px 7px 7px 3px", background: book.bg, overflow: "hidden", flexShrink: 0, boxShadow: "0 4px 10px -4px rgba(0,0,0,.4)" }}>
+                    {book.coverUrl
+                      ? <img src={book.coverUrl} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 2 }}>
+                          <span style={{ fontSize: 7, color: book.ink, lineHeight: 1.2, textAlign: "center", fontFamily: "Cinzel, serif" }}>{book.title.slice(0, 10)}</span>
+                        </div>
+                    }
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontSize: 14, color: "var(--ink)", marginBottom: 3 }}>
+                    {book?.title ?? "Livre inconnu"}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
+                    {total} page{total !== 1 ? "s" : ""} lues · {entries.length} session{entries.length !== 1 ? "s" : ""}
+                    {book?.pages ? ` · ${Math.round((total / book.pages) * 100)}%` : ""}
+                  </div>
+                </div>
+              </button>
+              {/* Liste des sessions */}
+              <div style={{ borderTop: "1px solid var(--line)", padding: "10px 18px", display: "flex", flexDirection: "column", gap: 6 }}>
+                {entries.map((e) => (
+                  <div key={e.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "var(--muted)" }}>
+                    <span style={{ color: "var(--accent)", fontWeight: 600 }}>{e.pagesRead} p.</span>
+                    {e.note && <span style={{ flex: 1, padding: "0 12px", fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</span>}
+                    <span style={{ flexShrink: 0 }}>{e.date}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Timeline chronologique ── */}
+      <div style={{ position: "relative", paddingLeft: 36, display: viewMode === "parLivre" ? "none" : "block" }}>
         {/* Vertical connector */}
         {journalEntries.length > 0 && (
           <div

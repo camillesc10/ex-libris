@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useStore } from "@/store";
 
 interface ActivityEvent {
@@ -71,7 +71,15 @@ export default function ActivityScreen() {
   const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [loadingFeed, setLoadingFeed] = useState(true);
   const [loadingSearch, setLoadingSearch] = useState(false);
+  const [userFilter, setUserFilter] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // #20 — utilisateurs uniques présents dans le fil
+  const uniqueUsers = useMemo(
+    () => Array.from(new Set(events.map((e) => e.userName).filter(Boolean))),
+    [events]
+  );
+  const filteredEvents = userFilter ? events.filter((e) => e.userName === userFilter) : events;
 
   useEffect(() => {
     fetch("/api/activity")
@@ -147,6 +155,39 @@ export default function ActivityScreen() {
             </button>
           )}
         </div>
+
+        {/* #20 — chips de filtre par lecteur·ice */}
+        {!query && uniqueUsers.length > 1 && (
+          <div style={{ display: "flex", gap: 7, overflowX: "auto", marginTop: 10, paddingBottom: 2, scrollbarWidth: "none" }}>
+            <button
+              onClick={() => setUserFilter(null)}
+              style={{
+                flexShrink: 0, padding: "5px 12px", borderRadius: 999, fontSize: 12,
+                border: `1px solid ${userFilter === null ? "var(--accent)" : "var(--line)"}`,
+                background: userFilter === null ? "var(--soft)" : "transparent",
+                color: userFilter === null ? "var(--accent)" : "var(--muted)",
+                cursor: "pointer",
+              }}
+            >
+              Toutes
+            </button>
+            {uniqueUsers.map((u) => (
+              <button
+                key={u}
+                onClick={() => setUserFilter(userFilter === u ? null : u)}
+                style={{
+                  flexShrink: 0, padding: "5px 12px", borderRadius: 999, fontSize: 12,
+                  border: `1px solid ${userFilter === u ? "var(--accent)" : "var(--line)"}`,
+                  background: userFilter === u ? "var(--soft)" : "transparent",
+                  color: userFilter === u ? "var(--accent)" : "var(--muted)",
+                  cursor: "pointer", whiteSpace: "nowrap",
+                }}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: "0 0 8px" }}>
@@ -206,7 +247,7 @@ export default function ActivityScreen() {
                 </div>
               </div>
             )}
-            {!loadingFeed && events.map((ev) => (
+            {!loadingFeed && filteredEvents.map((ev) => (
               <EventCard key={ev.id} ev={ev} />
             ))}
           </div>
@@ -256,6 +297,21 @@ function EventCard({ ev }: { ev: ActivityEvent }) {
           </button>{" "}
           <span style={{ color: "var(--ink)" }}>{label}</span>
         </div>
+        {/* #19 — progression en % pour les entrées journal */}
+        {ev.type === "journal_entry" && (() => {
+          const page = ev.payload?.page as number | null | undefined;
+          const totalPgs = bookInLibrary?.pages;
+          if (!page || !totalPgs) return null;
+          const pct = Math.min(100, Math.round((page / totalPgs) * 100));
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+              <div style={{ flex: 1, maxWidth: 120, height: 3, borderRadius: 2, background: "var(--line)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent)", borderRadius: 2 }} />
+              </div>
+              <span style={{ fontSize: 10.5, color: "var(--accent)", fontWeight: 600 }}>{pct}%</span>
+            </div>
+          );
+        })()}
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
           {timeAgo(ev.createdAt)}
         </div>

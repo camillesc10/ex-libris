@@ -5,7 +5,7 @@ import { useStore } from "@/store";
 export default function MeScreen() {
   const {
     user, yearGoal, books, journalEntries,
-    setYearGoal, navigate, logout, newList, setNewList, addList,
+    setYearGoal, navigate, logout, newList, setNewList, addList, setAdvFilters,
   } = useStore();
 
   const [showListInput, setShowListInput] = useState(false);
@@ -24,6 +24,17 @@ export default function MeScreen() {
 
   const goalProgress = yearGoal > 0 ? Math.min(1, booksRead / yearGoal) : 0;
   const initial = (user || "L").charAt(0).toUpperCase();
+
+  // #23 — stats mensuelles des 12 derniers mois
+  const MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+  const now = new Date();
+  const monthlyStats = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+    const prefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const count = books.filter((b) => b.finishedAt?.startsWith(prefix)).length;
+    return { label: MONTH_LABELS[d.getMonth()], prefix, count, year: d.getFullYear() };
+  });
+  const maxMonthly = Math.max(1, ...monthlyStats.map((m) => m.count));
 
   return (
     <div style={{ padding: "52px 20px calc(100px + env(safe-area-inset-bottom))", maxWidth: 540, margin: "0 auto" }}>
@@ -107,6 +118,37 @@ export default function MeScreen() {
           </div>
         ))}
       </div>
+
+      {/* #23 — graphe mensuel des livres finis (cliquable) */}
+      {monthlyStats.some((m) => m.count > 0) && (
+        <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: "16px 18px", marginBottom: 20 }}>
+          <div style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 14 }}>
+            Livres terminés par mois
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 72 }}>
+            {monthlyStats.map((m) => (
+              <button
+                key={m.prefix}
+                onClick={() => {
+                  if (m.count === 0) return;
+                  setAdvFilters({ year: m.prefix });
+                  navigate("shelf");
+                }}
+                title={m.count > 0 ? `${m.count} livre${m.count !== 1 ? "s" : ""} — ${m.label} ${m.year}` : undefined}
+                style={{
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  background: "none", border: "none", padding: 0,
+                  cursor: m.count > 0 ? "pointer" : "default",
+                }}
+              >
+                <div style={{ width: "100%", borderRadius: "3px 3px 0 0", background: m.count > 0 ? "var(--accent)" : "var(--line)", opacity: m.count > 0 ? 0.3 + (m.count / maxMonthly) * 0.7 : 0.2, height: `${Math.max(4, (m.count / maxMonthly) * 56)}px`, transition: "height .2s" }} />
+                {m.count > 0 && <span style={{ fontSize: 9, color: "var(--accent)", fontWeight: 700, lineHeight: 1 }}>{m.count}</span>}
+                <span style={{ fontSize: 9, color: "var(--muted)", lineHeight: 1 }}>{m.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Ajouter une liste */}
       <div style={{ border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", overflow: "hidden", marginBottom: 20 }}>

@@ -101,7 +101,21 @@ function BookSheetContent({ book }: { book: Book }) {
   }
   function removeTrope(name: string) { patch((b) => ({ ...b, tropes: b.tropes.filter((t) => t !== name) })); }
   function toggleList(name: string) {
-    patch((b) => ({ ...b, lists: b.lists.includes(name) ? b.lists.filter((l) => l !== name) : [...b.lists, name] }));
+    patch((b) => {
+      const isAdding = !b.lists.includes(name);
+      const newLists = isAdding ? [...b.lists, name] : b.lists.filter((l) => l !== name);
+      // #7 — snapshot de page quand on met en pause un livre en cours
+      let pageNotes = b.pageNotes || [];
+      if (name === "En pause" && isAdding && b.lists.includes("En cours") && b.page > 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        const already = pageNotes.some((n) => n.page === b.page && n.text === "📖 Mis en pause ici");
+        if (!already) {
+          pageNotes = [...pageNotes, { page: b.page, text: "📖 Mis en pause ici", date: today }]
+            .sort((a, z) => a.page - z.page);
+        }
+      }
+      return { ...b, lists: newLists, pageNotes };
+    });
   }
   function handleAddPlatform() { addPlatform(book.id, platformDraft); setPlatformDraft(""); }
   function addPageNote() {
@@ -569,6 +583,36 @@ function BookSheetContent({ book }: { book: Book }) {
                     style={{ width: 72, padding: "9px 11px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 13, outline: "none", color: "var(--ink)" }}
                   />
                 </div>
+                {/* #5 — navigation vers le tome précédent / suivant */}
+                {book.series && book.seriesNum != null && (() => {
+                  const tomes = books
+                    .filter((b) => b.series === book.series && b.seriesNum != null)
+                    .sort((a, b) => (a.seriesNum ?? 0) - (b.seriesNum ?? 0));
+                  const myNum = book.seriesNum ?? 0;
+                  const prev = tomes.find((b) => (b.seriesNum ?? 0) === myNum - 1);
+                  const next = tomes.find((b) => (b.seriesNum ?? 0) === myNum + 1);
+                  if (!prev && !next) return null;
+                  return (
+                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                      {prev && (
+                        <button
+                          onClick={() => openBook(prev.id)}
+                          style={{ flex: 1, padding: "8px 12px", borderRadius: 10, border: "1px solid var(--line)", background: "var(--surface2)", fontSize: 12.5, color: "var(--ink)", cursor: "pointer", textAlign: "left" }}
+                        >
+                          ← Tome {prev.seriesNum} · {prev.title}
+                        </button>
+                      )}
+                      {next && (
+                        <button
+                          onClick={() => openBook(next.id)}
+                          style={{ flex: 1, padding: "8px 12px", borderRadius: 10, border: "1px solid var(--accent)", background: "var(--soft)", fontSize: 12.5, color: "var(--accent)", cursor: "pointer", textAlign: "right" }}
+                        >
+                          Tome {next.seriesNum} · {next.title} →
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Dates de lecture */}

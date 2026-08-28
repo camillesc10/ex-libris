@@ -147,9 +147,10 @@ export default function ShelfScreen() {
   const waveSize = palWaveSize > 0 ? palWaveSize : 0;
 
   const mobileCollections = lists.filter((l) => !SYSTEM_STATUSES.has(l.name));
-  const mobileFiltered = listFilter
+  const mobileFiltered = (listFilter
     ? books.filter((b) => b.lists.includes(listFilter))
-    : books.filter((b) => STATUS_TILES.some((t) => b.lists.includes(t.key)));
+    : books.filter((b) => STATUS_TILES.some((t) => b.lists.includes(t.key))))
+    .filter((b) => !showUnrated || b.rating === 0);
 
   return (
     <div style={{ padding: "30px 38px" }} className="max-[820px]:!p-0">
@@ -229,6 +230,19 @@ export default function ShelfScreen() {
               }}
             >
               Mes sagas
+            </button>
+            {/* #9 — chip "Sans note" dans le layout mobile */}
+            <button
+              onClick={() => setShowUnrated((v) => !v)}
+              style={{
+                flexShrink: 0, padding: "6px 13px", borderRadius: 999,
+                border: `1px solid ${showUnrated ? "var(--accent)" : "var(--line)"}`,
+                background: showUnrated ? "var(--soft)" : "var(--surface)",
+                fontSize: 12.5, color: showUnrated ? "var(--accent)" : "var(--ink)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Sans note
             </button>
             {lists.map((l) => {
               const active = listFilter === l.name;
@@ -627,7 +641,11 @@ export default function ShelfScreen() {
               <h2 style={{ fontFamily: "var(--font-cinzel, Cinzel, serif)", fontWeight: 400, fontSize: 20, margin: 0, letterSpacing: ".02em" }}>
                 {row.label}
               </h2>
-              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{row.meta}</span>
+              {/* #10 — compteur de livres par rayon */}
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", fontVariantNumeric: "tabular-nums" }}>
+                {row.books.length}
+              </span>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>{row.meta}</span>
               {isPAL && waveSize > 0 && (
                 <span style={{ fontSize: 12, color: "var(--muted)" }}>
                   {palStart + 1}–{palEnd} / {totalPAL}

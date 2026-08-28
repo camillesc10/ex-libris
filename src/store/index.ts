@@ -541,13 +541,14 @@ export const useStore = create<AppState>((set, get) => ({
       bookId, pagesRead, note,
     };
     set((s) => ({ journalEntries: [entry, ...s.journalEntries] }));
+    const book = get().books.find((b) => b.id === bookId);
+    const newPage = book ? book.page + pagesRead : pagesRead;
     fetch("/api/journal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(entry),
+      body: JSON.stringify({ ...entry, page: newPage }),
     }).catch(() => {});
-    const book = get().books.find((b) => b.id === bookId);
-    if (book) get().updatePage(bookId, book.page + pagesRead);
+    if (book) get().updatePage(bookId, newPage);
   },
 
   // ── Lists ──
@@ -597,8 +598,16 @@ export const useStore = create<AppState>((set, get) => ({
     const p = parseInt(get().pageInput, 10);
     if (!p || p < 0) return;
     const { readBook } = get();
+    const prevPage = get().books.find((b) => b.id === readBook)?.page ?? 0;
     set({ myPage: p, pageInput: "" });
-    if (readBook) get().patchBook(readBook, (b) => ({ ...b, page: p }));
+    if (!readBook) return;
+    if (p > prevPage) {
+      // Auto-journal : crée une entrée pour les pages parcourues
+      get().addJournalEntry({ bookId: readBook, pagesRead: p - prevPage, note: "" });
+    } else {
+      // Correction de page en arrière : patch direct sans entrée journal
+      get().patchBook(readBook, (b) => ({ ...b, page: p }));
+    }
   },
   setNotePage(v) { set({ notePage: v }); },
   setNoteText(v) { set({ noteText: v }); },

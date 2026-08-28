@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     if (userId && body.bookId && (body.pagesRead ?? 0) > 0) {
       await createEvent(db, userId, body.bookId, "journal_entry", {
         pagesRead: body.pagesRead ?? 0,
+        page: body.page ?? null,
         note: body.note ?? "",
       });
     }
