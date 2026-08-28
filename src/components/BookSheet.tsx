@@ -206,7 +206,7 @@ function BookSheetContent({ book }: { book: Book }) {
         {/* Hidden canvas for palette extraction (#107) */}
         <canvas ref={canvasRef} style={{ display: "none" }} />
         {/* Sticky bar */}
-        <div style={{ position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 10, padding: "16px 20px", background: headerBg, backdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 10, padding: "16px 20px", paddingTop: "max(16px, calc(env(safe-area-inset-top) + 10px))", background: headerBg, backdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)" }}>
           {/* ← Back button — mobile only */}
           <button
             className="hidden max-[820px]:flex"
