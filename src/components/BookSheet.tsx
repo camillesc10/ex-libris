@@ -103,18 +103,32 @@ function BookSheetContent({ book }: { book: Book }) {
   function toggleList(name: string) {
     patch((b) => {
       const isAdding = !b.lists.includes(name);
-      const newLists = isAdding ? [...b.lists, name] : b.lists.filter((l) => l !== name);
-      // #7 — snapshot de page quand on met en pause un livre en cours
+      let lists = isAdding ? [...b.lists, name] : b.lists.filter((l) => l !== name);
+      const today = new Date().toISOString().slice(0, 10);
+      let { finishedAt, startedAt, page } = b;
       let pageNotes = b.pageNotes || [];
+
+      if (isAdding && name === "Déjà lu") {
+        // Terminer le livre : retirer En cours / En pause, fixer date et page finale
+        lists = lists.filter((l) => l !== "En cours" && l !== "En pause");
+        if (!finishedAt) finishedAt = today;
+        if (b.pages > 0) page = b.pages;
+      }
+
+      if (isAdding && name === "En cours" && !startedAt) {
+        startedAt = today;
+      }
+
+      // #7 — snapshot de page quand on met en pause un livre en cours
       if (name === "En pause" && isAdding && b.lists.includes("En cours") && b.page > 0) {
-        const today = new Date().toISOString().slice(0, 10);
         const already = pageNotes.some((n) => n.page === b.page && n.text === "📖 Mis en pause ici");
         if (!already) {
           pageNotes = [...pageNotes, { page: b.page, text: "📖 Mis en pause ici", date: today }]
             .sort((a, z) => a.page - z.page);
         }
       }
-      return { ...b, lists: newLists, pageNotes };
+
+      return { ...b, lists, finishedAt, startedAt, page, pageNotes };
     });
   }
   function handleAddPlatform() { addPlatform(book.id, platformDraft); setPlatformDraft(""); }
@@ -625,7 +639,24 @@ function BookSheetContent({ book }: { book: Book }) {
                   </div>
                   <div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Terminé le</div>
-                    <input type="date" value={book.finishedAt || ""} onChange={(e) => patch((b) => ({ ...b, finishedAt: e.target.value || undefined }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 12.5, outline: "none", colorScheme: "dark" }} />
+                    <input
+                      type="date"
+                      value={book.finishedAt || ""}
+                      onChange={(e) => {
+                        const date = e.target.value || undefined;
+                        patch((b) => {
+                          let lists = [...b.lists];
+                          let page = b.page;
+                          if (date && !lists.includes("Déjà lu")) {
+                            lists = lists.filter((l) => l !== "En cours" && l !== "En pause");
+                            lists.push("Déjà lu");
+                          }
+                          if (date && b.pages > 0) page = b.pages;
+                          return { ...b, finishedAt: date, lists, page };
+                        });
+                      }}
+                      style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 9, background: "var(--bg)", fontSize: 12.5, outline: "none", colorScheme: "dark" }}
+                    />
                   </div>
                 </div>
                 <div>
