@@ -78,7 +78,7 @@ export default function BottomNav() {
     <nav
       className="hidden max-[820px]:flex"
       style={{
-        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+        position: "relative", zIndex: 50,
         alignItems: "stretch",
         background: "color-mix(in srgb, var(--surface) 97%, transparent)",
         backdropFilter: "blur(20px)",
@@ -89,9 +89,6 @@ export default function BottomNav() {
         paddingLeft: 4,
         paddingRight: 4,
         gap: 0,
-        WebkitTransform: "translate3d(0,0,0)",
-        transform: "translate3d(0,0,0)",
-        willChange: "transform",
       }}
     >
       {TABS.map((tab) => {
