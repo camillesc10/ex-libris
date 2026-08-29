@@ -26,18 +26,21 @@ export default function AppShell() {
   useEffect(() => { hydrate(); }, [hydrate]);
 
   return (
-    <div data-theme={theme} style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+    <div
+      data-theme={theme}
+      style={{ background: "var(--bg)" }}
+      className="min-h-[100dvh] relative max-[820px]:h-[100dvh] max-[820px]:min-h-0 max-[820px]:flex max-[820px]:flex-col max-[820px]:overflow-hidden"
+    >
       <RouterSync />
       <StarField />
       <div
-        style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", position: "relative", zIndex: 1 }}
-        className="max-[820px]:grid-cols-1!"
+        style={{ position: "relative", zIndex: 1 }}
+        className="grid grid-cols-[240px_1fr] min-h-screen max-[820px]:grid-cols-1 max-[820px]:flex max-[820px]:flex-col max-[820px]:flex-1 max-[820px]:min-h-0 max-[820px]:overflow-hidden"
       >
         <Sidebar />
 
         <main
-          style={{ minWidth: 0, paddingBottom: 96 }}
-          className="max-[820px]:!pb-[calc(96px+env(safe-area-inset-bottom))]"
+          className="min-w-0 pb-24 max-[820px]:pb-6 max-[820px]:flex-1 max-[820px]:overflow-y-auto max-[820px]:pt-[env(safe-area-inset-top)]"
         >
           <Header />
           <ScreenContent screen={screen} />
